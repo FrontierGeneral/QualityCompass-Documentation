@@ -39,7 +39,7 @@ This documentation is organized into two main sections:
 
 - **App Version**: 1.0.0
 - **Documentation Version**: 1.0.0
-- **Last Updated**: January 2025
+- **Last Updated**: September 2025
 - **Forge Platform Version**: Latest
 
 ### 🤝 Support
@@ -47,7 +47,7 @@ This documentation is organized into two main sections:
 For additional support or to report issues:
 - **Technical Issues**: Refer to [Technical Troubleshooting](./Technical/Troubleshooting-Technical.md)
 - **User Issues**: Check the [FAQ](./User-Guide/FAQ.md) or [User Troubleshooting](./User-Guide/Troubleshooting.md)
-- **Contact Support**: support@your-organization.com
+- **Contact Support**: pedro.pinto@sportingtech.com
 
 ### 📋 Documentation Standards
 
