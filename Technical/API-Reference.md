@@ -69,14 +69,14 @@ Retrieve a specific Jira issue by ID or key.
 
 ```javascript
 invoke('getIssue', {
-  issueIdOrKey: string  // Issue ID or key (e.g., '10001' or 'PROJ-123')
+  issueId: string  // Issue ID or key (e.g., '10001' or 'PROJ-123')
 })
 ```
 
 **Example:**
 ```javascript
 const issue = await invoke('getIssue', {
-  issueIdOrKey: 'PROJ-123'
+  issueId: 'PROJ-123'
 });
 ```
 
@@ -108,7 +108,8 @@ invoke('searchIssues', {
   jql: string,           // JQL query
   maxResults?: number,   // Maximum results (default: 50, max: 100)
   startAt?: number,      // Pagination offset (default: 0)
-  fields?: string[]      // Fields to return
+  fields?: string[],     // Fields to return
+  nextPageToken?: string // Optional token-based pagination
 })
 ```
 
@@ -163,11 +164,10 @@ const evaluations = await invoke('getStorageValue', {
 **Common Storage Keys (actual usage):**
 - `ticket-evaluations` - All evaluations
 - `project-evaluations-<PROJECT_KEY>` - Project-scoped evaluations
-- `evaluation-criteria` - Criteria configuration (internal)
+- `evaluation-criteria` - Criteria configuration
 - `evaluator-name-mapping` - Manual evaluator name overrides
-- `evaluator-name-removed` - Removed evaluator IDs list (internal)
-- `allowed-projects` - Allowed project keys
-- `allowed-projects-audit` - Project access audit entries
+- `user-displayname-cache` - Auto-resolved display names cache
+- `selected-project` - Last selected project key per user
 - `coverage-targets` - Coverage target settings
 
 ### setStorageValue
@@ -439,7 +439,7 @@ For performance troubleshooting, see [Technical Troubleshooting](./Troubleshooti
 
 ## Rate Limiting
 
-No custom application rate limiting is implemented. Forge/Jira platform limits apply to API requests. Handle `429` responses with retries and backoff.
+Client-side: a lightweight concurrency limiter (default 8 inflight) and in-flight request deduplication reduce bursts. Forge/Jira platform limits still apply. Handle `429` responses with retries and backoff.
 
 For guidance, see [Security Documentation](./Security.md#rate-limiting).
 
@@ -564,7 +564,7 @@ async function withRetry(fn, maxRetries = 3) {
 
 ## Additional API Functions
 
-### getFilteredEvaluations
+### Planned: getFilteredEvaluations
 
 Retrieve evaluations with specific filters.
 
@@ -581,7 +581,7 @@ invoke('getFilteredEvaluations', {
 
 **Response Time:** 200-800ms depending on filter complexity
 
-### getTicketMetadataBatch
+### Planned: getTicketMetadataBatch
 
 Fetch metadata for multiple tickets efficiently.
 
@@ -594,7 +594,7 @@ invoke('getTicketMetadataBatch', {
 
 **Response Time:** 300-1500ms for up to 50 tickets
 
-### getCoverageTargets
+### Planned: getCoverageTargets
 
 Retrieve configured coverage targets.
 
@@ -604,7 +604,7 @@ invoke('getCoverageTargets', {})
 
 **Response Time:** 50-150ms
 
-### setCoverageTargets
+### Planned: setCoverageTargets
 
 Update coverage targets (admin only).
 

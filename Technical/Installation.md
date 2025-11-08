@@ -25,22 +25,23 @@ The installing user must have:
 
 ## Installation Steps
 
-### Step 1: Install from Atlassian Marketplace
+### Step 1: Install via Forge CLI (recommended for current build)
 
-1. **Navigate to Marketplace**
-   - Log into your Jira instance as an administrator
-   - Go to **Apps** → **Find new apps**
-   - Search for "Quality Compass"
+1. **Register and Deploy**
+   ```bash
+   forge register
+   npm run build
+   forge deploy --environment development
+   ```
 
-2. **Install the App**
-   - Click **Get it now**
-   - Review permissions and click **Get app**
-   - Wait for installation to complete
+2. **Install into your Jira site**
+   ```bash
+   forge install --environment development --site <your-site>.atlassian.net --product jira
+   ```
 
 3. **Verify Installation**
-   - Go to **Apps** → **Manage apps**
-   - Confirm "Quality Compass" appears in the list
-   - Status should show as "Enabled"
+   - Open your Jira project → Apps → Quality Compass
+   - Ensure dashboards/tabs load
 
 ### Step 2: Initial Configuration
 
@@ -130,16 +131,7 @@ The app automatically configures storage with these defaults:
 ```
 
 #### API Rate Limits
-Default rate limits are configured as:
-```javascript
-{
-  "rateLimits": {
-    "requests_per_minute": 60,
-    "requests_per_hour": 1000,
-    "concurrent_requests": 10
-  }
-}
-```
+The app uses a client-side concurrency limiter (default 8) and in-flight request deduplication to smooth bursts. Platform limits still apply.
 
 ### Step 5: Verification
 

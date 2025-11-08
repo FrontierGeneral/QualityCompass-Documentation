@@ -238,14 +238,11 @@ class RateLimiter {
 }
 ```
 
-### Rate Limits by Operation
+### Client & Platform Controls
 
-| Operation | Limit per Minute | Limit per Hour |
-|-----------|-----------------|----------------|
-| Read Operations | 100 | 2000 |
-| Write Operations | 30 | 500 |
-| Export Operations | 5 | 50 |
-| Bulk Operations | 2 | 20 |
+- Client-side concurrency limiter (default 8 inflight) reduces contention and rate-limit hits.
+- In-flight request deduplication coalesces identical calls.
+- Platform (Forge/Jira) rate limits still apply; exponential backoff is used on `429`.
 
 For API performance details, see [API Reference](./API-Reference.md#performance-and-response-times).
 

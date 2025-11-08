@@ -37,12 +37,7 @@ cd quality-compass
 npm install -g @forge/cli
 
 # Install project dependencies
-npm install
-
-# Install frontend dependencies
-cd static/hello-world
-npm install
-cd ../..
+npm ci
 ```
 
 #### 3. Forge Authentication
@@ -64,46 +59,29 @@ cp .env.example .env
 # Edit .env with your configuration
 ```
 
-## Project Structure
+## Project Structure (current)
 
 ```
 quality-compass/
 ├── src/
-│   ├── index.js                 # Forge resolvers (backend)
-│   ├── validators/              # Input validation
-│   │   └── inputValidator.js
-│   ├── middleware/              # Middleware functions
-│   │   └── rateLimiter.js
-│   ├── utils/                   # Utility functions
-│   │   └── errorHandler.js
-│   └── services/                # Service layer
-│       ├── auditService.js
-│       └── gdprService.js
-│
-├── src-frontend/                # Frontend React app
-│   ├── src/
-│   │   ├── components/          # React components
-│   │   │   ├── admin/          # Admin dashboard components
-│   │   │   ├── shared/         # Shared components
-│   │   │   └── evaluation/    # Evaluation components
-│   │   ├── services/           # Frontend services
-│   │   │   ├── analyticsService.ts
-│   │   │   ├── exportService.ts
-│   │   │   └── cacheService.ts
-│   │   ├── contexts/           # React contexts
-│   │   ├── hooks/              # Custom React hooks
-│   │   ├── types/              # TypeScript definitions
-│   │   ├── pages/              # Page components
-│   │   └── App.tsx             # Main app component
-│   │
-│   ├── public/                 # Static assets
-│   ├── vite.config.ts          # Vite configuration
-│   ├── tsconfig.json           # TypeScript configuration
-│   └── package.json            # Frontend dependencies
-│
-├── manifest.yml                # Forge app manifest
-├── package.json               # Root dependencies
-├── .gitignore
+│   ├── index.js              # Forge resolvers
+│   ├── components/           # React components
+│   ├── pages/                # Page components
+│   ├── services/             # Business logic & data access
+│   │   ├── advancedAnalyticsService.ts
+│   │   ├── analyticsService.ts
+│   │   ├── utils/
+│   │   │   ├── api.ts        # Bridge + limiter + dedupe
+│   │   │   ├── persistedCache.ts
+│   │   │   └── jiraUrl.ts
+│   ├── contexts/
+│   ├── hooks/
+│   ├── types/
+│   └── validators/
+├── public/
+├── vite.config.ts            # Vite config (worker.format = 'es')
+├── manifest.yml              # Forge configuration
+├── package.json
 └── README.md
 ```
 
@@ -159,15 +137,26 @@ export const NewComponent: React.FC = () => {
 # Build frontend
 npm run build
 
-# Deploy to staging
-cd ../..
-forge deploy --environment staging
+# Deploy to development/staging/production
+forge deploy --environment development
+forge deploy --environment production
 
 # Deploy to production
 forge deploy --environment production
 ```
 
 For production deployment details, see [Installation Guide](./Installation.md#installation-steps).
+
+### Workers & Bundling Notes
+- Create workers via:
+```ts
+new Worker(new URL('./workers/advancedAnalyticsWorker.ts', import.meta.url), { type: 'module' })
+```
+- Ensure `vite.config.ts` includes:
+```ts
+worker: { format: 'es' }
+```
+- Avoid `?worker` import format with UMD/IIFE in code-splitting builds.
 
 ## Code Standards
 

@@ -27,12 +27,14 @@ After your administrator has installed the app, you can access it from any Jira 
 
 ### 2. Understanding the Dashboard
 
-When you first open the app, you'll see the main dashboard with several tabs:
+When you first open the app, you'll see the main dashboard with several tabs (availability depends on your permissions):
 
 - **📊 Analytics**: View overall quality metrics and trends
 - **👤 Agent Performance**: Track individual agent performance
-- **🎯 Evaluator Analytics**: Monitor evaluator consistency
-- **📈 Advanced Analytics**: Access predictive analytics and forecasts
+- **🎯 Evaluator Analytics**: Monitor evaluator consistency (with missing evaluations on-demand)
+- **📈 Advanced Analytics**: Coverage, trends, distribution, patterns, and forecasting
+- **🧩 Configuration**: Manage evaluation criteria (admin)
+- **⚙️ Settings**: Project access, roles & access, and coverage targets (admin)
 
 ### 3. Your First Evaluation
 
@@ -135,7 +137,11 @@ You can export evaluation data for further analysis:
 - Timestamps
 - Feedback comments
 
-## Tips for Success
+## Performance & Tips
+
+### Performance Notes
+- First time you open a tab, data may take longer to compute. Subsequent opens are much faster due to caching.
+- Use the Refresh/Apply Filters button to fetch fresh results if needed; cached data will update in the background.
 
 ### For Evaluators
 1. **Be Consistent**: Use the same standards for all evaluations

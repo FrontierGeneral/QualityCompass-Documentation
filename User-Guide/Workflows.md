@@ -16,10 +16,11 @@ This guide provides step-by-step workflows for different team roles and common s
 1. **Open Analytics Dashboard**
    - Check overnight evaluation activity
    - Note any significant score changes
+   - Use date range and filters; refresh for latest
 
-2. **Review Alerts**
-   - Check for quality threshold breaches
-   - Identify tickets needing attention
+2. **Review Coverage & Missing Evaluations**
+   - In Advanced Analytics, review coverage against targets
+   - In Evaluator Analytics, load Missing Evaluations for a selected range (on-demand)
 
 3. **Check Agent Performance**
    - Sort by trend to identify declining performance
@@ -250,10 +251,10 @@ This guide provides step-by-step workflows for different team roles and common s
    - Set weights if needed
    - Add project-specific criteria
 
-3. **Set Quality Thresholds**
-   - Define score ranges
-   - Set alert thresholds
-   - Configure notifications
+3. **Set Coverage Targets**
+   - Define coverage targets by priority
+   - Adjust overall target
+   - Review under-evaluated areas
 
 4. **Create Evaluation Templates**
    - Standard evaluation template

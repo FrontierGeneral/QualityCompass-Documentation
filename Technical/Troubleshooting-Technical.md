@@ -166,7 +166,9 @@ console.timeEnd('Processing');
 
 **Solutions:**
 
-1. **Implement pagination:**
+1. **Persistent cache + SWR:** Advanced analytics reads from IndexedDB first and refreshes in background.
+
+2. **Implement pagination:**
 ```javascript
 // Instead of loading all data
 const allEvaluations = await storage.get('evaluations');
@@ -183,7 +185,7 @@ async function* getEvaluationsPaginated(pageSize = 100) {
 }
 ```
 
-2. **Add caching layer:**
+3. **Add caching layer:**
 ```javascript
 // Cache processed analytics
 const cacheKey = `analytics_${dateRange}_${filters}`;
@@ -325,6 +327,21 @@ npm run build
 
 # Check for version conflicts
 npm ls
+```
+
+#### Worker Build Errors (Vite)
+
+**Error:** `vite:worker-import-meta-url Invalid value 'iife' for option 'worker-format'`
+
+**Solution:**
+```ts
+// Create workers via URL with module type
+new Worker(new URL('./workers/advancedAnalyticsWorker.ts', import.meta.url), { type: 'module' });
+
+// Ensure vite.config.ts includes
+export default defineConfig({
+  worker: { format: 'es' }
+});
 ```
 
 #### Deployment Failures

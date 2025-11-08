@@ -11,7 +11,7 @@ The Analytics Dashboard is your central hub for understanding quality metrics ac
 
 ### Key Features
 
-#### 1. Real-Time Metrics
+#### 1. Key Metrics
 **What it shows:**
 - Total evaluations completed
 - Overall average score
@@ -20,7 +20,7 @@ The Analytics Dashboard is your central hub for understanding quality metrics ac
 
 **How to use:**
 1. Open the Analytics tab
-2. Metrics update automatically every 5 minutes
+2. Metrics use caching and update automatically every few minutes; click Refresh for the latest
 3. Click on any metric for detailed breakdown
 
 **Pro tip:** Set up a dashboard on a monitor for team visibility!
@@ -173,7 +173,7 @@ View deeper breakdowns and trends based on your selected filters. Focus areas in
 - Coverage by priority/issue type
 - Distribution charts with click-through details
 
-Note: Predictive forecasting, capacity planning, and correlation analysis are not available.
+Note: Predictive forecasting, capacity insights, correlations, patterns, and coverage are available in this tab. Initial load may take longer; subsequent loads are near-instant.
 
 ## 📝 Evaluation Management
 
@@ -264,7 +264,7 @@ Note: Predictive forecasting, capacity planning, and correlation analysis are no
 #### Available Admin Settings
 **Administrators can manage:**
 1. **Project Access Control** - Add/remove allowed projects
-2. **Evaluator Name Management** - Override displayed names
+2. **Evaluator Name Management** - Override displayed names (manual mapping coexists with auto-resolved names)
 3. **Coverage Targets** - Set evaluation coverage goals
 
 #### Permission Requirements

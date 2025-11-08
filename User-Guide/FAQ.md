@@ -34,7 +34,7 @@ Possible reasons:
 - The app isn't installed for this project
 
 ### How many evaluations can one ticket have?
-Tickets can have multiple evaluations, however only the last one will be counted for analytics.
+Tickets can have multiple evaluations; analytics use the most recent per ticket for charts. Raw tables may show full history where applicable.
 
 ---
 
@@ -63,8 +63,8 @@ Discuss it in your team's calibration meeting. The app tracks evaluator patterns
 
 ### How often is analytics data updated?
 - Real-time for new evaluations
-- Cached data refreshes every 5-15 minutes
-- Manual refresh available via the refresh button
+- Cached results are shown instantly on revisit; background refresh updates automatically
+- Manual refresh available via the Refresh/Apply Filters button
 
 ### What does the trend percentage mean?
 The trend shows the change in average score:
@@ -119,7 +119,7 @@ Yes, all data is:
 - Regularly backed up
 
 ### Can I integrate this with other tools?
-The app provides data export capabilities. API integration is planned for future releases.
+The app provides data export capabilities. Additional API endpoints and integrations are planned for future releases.
 
 ### What browsers are supported?
 Modern versions of:
@@ -139,10 +139,10 @@ Data remains in Forge storage until manually deleted or purged. Export before un
 ## Troubleshooting Questions
 
 ### Why is the app running slowly?
-- Check your internet connection
-- Clear browser cache
-- Try a different browser
+- First load of complex tabs (Evaluator/Advanced) can take longer. Re-opens should be much faster due to caching.
 - Reduce the date range for large datasets
+- Click Refresh to fetch latest; otherwise the app may show cached data first and update in the background
+- Check your internet connection / try a different browser
 - Contact support if issues persist
 
 ### I'm getting an error message. What should I do?
@@ -180,7 +180,7 @@ Evaluation criteria are currently pre-configured and cannot be modified through 
 Yes, through Jira's permission schemes. Users need "Edit Issues" permission to create evaluations.
 
 ### How do I manage evaluator access?
-Evaluator access is controlled through Jira project permissions. Users need "Edit Issues" permission to create evaluations. Administrators can manage project access through the Settings tab in the app.
+Evaluator access is controlled through Jira project permissions. Administrators can manage project access and roles under Settings.
 
 ### Can I delete evaluations?
 No, evaluations cannot be deleted once created. This ensures data integrity and maintains a complete evaluation history.

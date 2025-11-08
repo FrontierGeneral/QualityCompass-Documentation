@@ -48,6 +48,8 @@ The Quality Compass is built on the Atlassian Forge platform, providing a compre
 - **Data Visualization**: Recharts
 - **Date Handling**: date-fns
 - **Excel Export**: exceljs
+- **Workers**: Web Worker for CPU-heavy advanced analytics
+- **Persistent Caching**: IndexedDB (SWR pattern)
 
 ### Backend
 - **Runtime**: Forge Platform (Node.js-based)
@@ -55,6 +57,7 @@ The Quality Compass is built on the Atlassian Forge platform, providing a compre
 - **API Integration**: Forge API for Jira interaction
 - **Storage**: Forge Storage API
 - **Authentication**: Forge authentication (api.asUser, api.asApp)
+- **Request Management**: In-flight request deduplication + client concurrency limiter
 
 ### Security
 - **Input Validation**: Custom validation middleware
@@ -124,16 +127,16 @@ interface TicketEvaluation {
 }
 ```
 
-#### Storage Structure
+#### Storage Structure (actual keys)
 ```javascript
-// Forge Storage Keys
-'evaluations' // Array of all evaluations
-'evaluation-criteria' // Criteria configuration
-'allowed-projects' // Project access control
-'evaluator-name-mapping' // Manual name overrides
-'user-selected-project:{userId}' // User preferences
-'theme-preference' // Theme settings
-'audit-logs' // Security audit logs
+// Forge Storage Keys (used by app)
+'ticket-evaluations'                 // Global list of evaluations
+'project-evaluations-<PROJECT_KEY>'  // Project-scoped evaluations
+'evaluation-criteria'                // Criteria configuration
+'evaluator-name-mapping'             // Manual evaluator name overrides
+'user-displayname-cache'             // Auto-resolved display names cache
+'selected-project'                   // Last selected project key per user
+'coverage-targets'                   // Admin-configured coverage targets
 ```
 
 ## Data Flow
@@ -160,7 +163,7 @@ Export Request → Data Collection → Format Transformation
 
 ### Jira REST API Integration
 - **Issue Retrieval**: `/rest/api/3/issue/{issueIdOrKey}`
-- **Search**: `/rest/api/3/search`
+- **Search**: `/rest/api/3/search` (supports `startAt` pagination and `nextPageToken` where available)
 - **User Management**: `/rest/api/3/user`
 - **Project Access**: `/rest/api/3/project`
 
@@ -174,12 +177,14 @@ For detailed API documentation, see [API Reference](./API-Reference.md#storage-a
 ## Performance Considerations
 
 ### Caching Strategy
-- **Client-side**: In-memory cache with TTL
+- **Client-side**: In-memory cache with TTL + IndexedDB persistent cache (SWR)
 - **Cache Keys**: Generated based on request parameters
-- **TTL Values**:
-  - SHORT: 5 minutes (user data)
-  - MEDIUM: 15 minutes (analytics)
-  - LONG: 30 minutes (configuration)
+- **TTL Values (current)**:
+  - SHORT: 1 minute
+  - MEDIUM: 5 minutes
+  - LONG: 30 minutes
+  - VERY_LONG: 2 hours (advanced analytics)
+- **Persistent Cache**: Advanced analytics results persisted and refreshed in background
 
 ### Optimization Techniques
 1. **Batch API Calls**: Reduce network overhead
@@ -187,6 +192,10 @@ For detailed API documentation, see [API Reference](./API-Reference.md#storage-a
 3. **Memoization**: Cache computed values
 4. **Virtual Scrolling**: For large data sets
 5. **Debouncing**: For search and filter inputs
+6. **In-flight Request Deduplication**: Identical calls coalesce
+7. **Global Concurrency Limiter**: Max 8 Forge invocations at once
+8. **Adjacent Tab Prefetch Constraints**: Heavy tabs not prefetched in background
+9. **Worker Offload**: CPU-heavy analytics runs in Web Worker
 
 ## Security Architecture
 
@@ -265,7 +274,7 @@ permissions:
 
 ### Build Pipeline
 1. **Development**: Local development with tunnel
-2. **Build**: Vite production build
+2. **Build**: Vite production build (workers via `new URL('./worker.ts', import.meta.url)` and `vite.config.ts` `worker.format = 'es'`)
 3. **Deploy**: Forge deploy command
 4. **Verification**: Automated smoke tests
 
