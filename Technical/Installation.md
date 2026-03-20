@@ -362,9 +362,7 @@ await storage.set('evaluations', []);
 - **Development Setup**: [Development Guide](./Development.md)
 - **Security**: [Security Documentation](./Security.md)
 - **Troubleshooting**: [Technical Troubleshooting](./Troubleshooting-Technical.md)
-- **Technical Support**: support@your-organization.com
-- **Community Forum**: community.your-organization.com
-- **Issue Tracker**: jira.your-organization.com
+- **Technical Support**: support@nexusfrontier.net
 
 ### Useful Commands
 

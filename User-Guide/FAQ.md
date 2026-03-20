@@ -244,7 +244,7 @@ Raise a ticket in the Service Desk Jira project with:
 
 ### Where can I suggest new features?
 Submit feature requests to:
-- Email: pedro.pinto@sportingtech.com
+- Email: support@nexusfrontier.net
 - Include use case and expected benefits
 
 ### Is there a user community?
@@ -269,4 +269,4 @@ If something isn't working, try these steps in order:
 
 ---
 
-*Can't find your answer? Contact pedro.pinto@sportingtech.com*
+*Can't find your answer? Contact support@nexusfrontier.net*

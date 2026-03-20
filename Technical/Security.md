@@ -410,10 +410,7 @@ async function updateUserData(userId, updates) {
 
 | Role | Contact | Escalation Time |
 |------|---------|-----------------|
-| Security Team | security@org.com | Immediate |
-| Dev Team Lead | devlead@org.com | 15 minutes |
-| Product Owner | po@org.com | 30 minutes |
-| Executive | exec@org.com | 1 hour |
+| Nexus Frontier Support | support@nexusfrontier.net | Immediate |
 
 ## Security Best Practices
 
@@ -519,7 +516,7 @@ Reports available upon request:
 
 ---
 
-*For security concerns or vulnerability reports, contact: security@your-organization.com*
+*For security concerns or vulnerability reports, contact: support@nexusfrontier.net*
 
 *Last Updated: January 2025*
 

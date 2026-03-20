@@ -200,7 +200,7 @@ Make your workflow faster with these shortcuts:
 ### Support Resources
 - **Documentation**: You're reading it! 📚
 - **FAQ Section**: [Common questions answered](./FAQ.md)
-- **Contact Support**: support@your-organization.com
+- **Contact Support**: support@nexusfrontier.net
 
 ## Next Steps
 

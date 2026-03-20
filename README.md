@@ -1,10 +1,10 @@
 # Quality Compass Documentation
 
-## 📚 Documentation Overview
+## Documentation Overview
 
-Welcome to the comprehensive documentation for the Quality Compass - a powerful quality assurance and evaluation management system for Jira.
+Comprehensive documentation for Quality Compass — a quality assurance and evaluation management system for Jira, built on Atlassian Forge.
 
-### 🎯 Quick Navigation
+### Quick Navigation
 
 #### Technical Documentation
 - [Architecture Overview](./Technical/Architecture.md) - System design and technical architecture
@@ -18,52 +18,42 @@ Welcome to the comprehensive documentation for the Quality Compass - a powerful 
 - [Getting Started](./User-Guide/Getting-Started.md) - Quick start guide for new users
 - [Feature Guide](./User-Guide/Feature-Guide.md) - Comprehensive feature documentation
 - [Workflows](./User-Guide/Workflows.md) - Common workflow guides
-- [UI Reference](./User-Guide/UI-Reference.md) - User interface guide
 - [FAQ](./User-Guide/FAQ.md) - Frequently asked questions
 
-### 📖 About This Documentation
+#### Legal Documentation
+- [Privacy Policy](./Legal/Privacy-Policy.md) - How we collect, use, and protect data
+- [Terms of Service](./Legal/Terms-of-Service.md) - Provider-Specific Terms
+- [Data Processing Agreement](./Legal/Data-Processing-Agreement.md) - GDPR-compliant DPA
+- [Cloud Security Statement](./Legal/Cloud-Security-Statement.md) - Security practices and controls
+- [Support SLA](./Legal/Support-SLA.md) - Support commitments and response times
 
-This documentation is organized into two main sections:
+### About This Documentation
+
+This documentation is organized into three sections:
 
 1. **Technical Documentation**: For administrators, developers, and technical staff responsible for installing, configuring, and maintaining the app.
-
 2. **User Guide**: For end users who will be using the app for quality assurance evaluations and reporting.
+3. **Legal Documentation**: Privacy Policy, Terms of Service, Data Processing Agreement, Security Statement, and Support SLA.
 
-### 🚀 Quick Start
+### Quick Start
 
 - **New Users**: Start with the [Getting Started Guide](./User-Guide/Getting-Started.md)
 - **Administrators**: Begin with the [Installation Guide](./Technical/Installation.md)
 - **Developers**: Check out the [Development Guide](./Technical/Development.md)
 
-### 📝 Version Information
+### Version Information
 
 - **App Version**: 1.0.0
-- **Documentation Version**: 1.0.0
-- **Last Updated**: September 2025
+- **Documentation Version**: 1.1.0
+- **Last Updated**: March 2026
 - **Forge Platform Version**: Latest
 
-### 🤝 Support
+### Support
 
-For additional support or to report issues:
 - **Technical Issues**: Refer to [Technical Troubleshooting](./Technical/Troubleshooting-Technical.md)
-- **User Issues**: Check the [FAQ](./User-Guide/FAQ.md) or [User Troubleshooting](./User-Guide/Troubleshooting.md)
-- **Contact Support**: pedro.pinto@sportingtech.com
-
-### 📋 Documentation Standards
-
-This documentation follows:
-- Markdown formatting for all documents
-- Clear hierarchical structure
-- Visual aids including screenshots and diagrams
-- Code examples and configuration samples
-- Step-by-step instructions with numbered lists
-- Consistent terminology throughout
-
-### 🔄 Updates
-
-Documentation is updated with each major release. Check the version information above to ensure you're reading the latest documentation.
+- **User Issues**: Check the [FAQ](./User-Guide/FAQ.md)
+- **Contact Support**: support@nexusfrontier.net
 
 ---
 
-© 2025 Your Organization. All rights reserved.
-
+© 2026 Nexus Frontier. All rights reserved.

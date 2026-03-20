@@ -1,0 +1,17 @@
+title: Nexus Frontier
+description: Quality intelligence tools for the Atlassian ecosystem
+theme: minima
+baseurl: "/NexusFrontier-Documentation"
+url: "https://frontiergeneral.github.io"
+
+header_pages:
+  - sla.md
+  - privacy.md
+  - terms.md
+  - cloud-security.md
+  - dpa.md
+
+exclude:
+  - Technical
+  - User-Guide
+  - Legal

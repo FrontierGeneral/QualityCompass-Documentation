@@ -705,7 +705,7 @@ const ALERT_THRESHOLDS = {
    - Known issues list
 
 2. **Level 2: Development team**
-   - Email: dev-team@organization.com
+   - Email: support@nexusfrontier.net
    - Slack: #quality-compass-dev
 
 3. **Level 3: Atlassian support**
@@ -733,7 +733,7 @@ When reporting issues, include:
 
 ---
 
-*For urgent technical issues, contact: tech-support@your-organization.com*
+*For urgent technical issues, contact: support@nexusfrontier.net*
 
 *Last Updated: January 2025*
 
