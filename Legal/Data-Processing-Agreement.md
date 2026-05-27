@@ -1,8 +1,8 @@
 # Quality Compass — Data Processing Agreement (DPA)
 
 **Effective Date:** March 7, 2026
-**Last Updated:** March 7, 2026
-**Version:** 1.0
+**Last Updated:** May 27, 2026
+**Version:** 1.1
 
 ---
 
@@ -76,6 +76,7 @@ Provider processes Personal Data solely on behalf of and under the documented in
 | Role Assignments | Product-generated | Record which users are assigned to which roles per project |
 | Administrative Actions | Product-generated | Audit trail of who performed administrative actions and when |
 | GDPR Consent Records | Product-generated | Record user consent decisions and timestamps |
+| Personal Data Index | Product-generated | Atlassian Account IDs and last-updated timestamps for users whose data the Product stores. Reported weekly to Atlassian's Personal Data Reporting API so Atlassian can notify the Product when an account is closed or its profile is updated. |
 
 ### 4.4 Sensitive Data
 
@@ -144,6 +145,7 @@ Provider shall assist Customer in responding to Data Subject requests by:
 - Providing built-in data deletion functionality (Right to Erasure)
 - Supporting data rectification through Jira profile updates (Right to Rectification)
 - Enabling access restriction through RBAC configuration (Right to Restriction)
+- Participating in Atlassian's Personal Data Reporting API: on a weekly schedule, the Product reports its Personal Data Index to Atlassian. When Atlassian indicates that a Data Subject's Atlassian account has been closed, the Product automatically erases that Data Subject's Personal Data from Forge Key-Value Storage. When Atlassian indicates that a Data Subject's profile has been updated, the Product refreshes its cached copy from Atlassian's user APIs.
 
 Provider shall promptly inform Customer if it receives a request directly from a Data Subject, without responding to the request unless authorized by Customer.
 
@@ -243,7 +245,7 @@ Upon termination or expiration of the Agreement, Provider shall:
 - Within 60 days of Customer's request, delete or return all Personal Data processed under this DPA
 - Delete existing copies of Personal Data unless required by applicable law to retain them
 
-Deletion of Personal Data stored in Forge Key-Value Storage is handled through the Atlassian platform upon app uninstallation. For data deletion prior to uninstallation, Customer may use the Product's built-in GDPR features or contact Provider.
+Deletion of Personal Data stored in Forge Key-Value Storage is handled through the Atlassian platform upon app uninstallation. Atlassian retains uninstalled-app data for up to 28 days as a soft-delete grace period (during which the data is inaccessible to the Product but recoverable if Customer reinstalls within 21 days); after 28 days the data is permanently deleted by the Atlassian platform. For data deletion prior to uninstallation, Customer may use the Product's built-in GDPR features or contact Provider.
 
 ---
 
@@ -332,12 +334,12 @@ This Annex describes the technical and organizational security measures implemen
 
 ### A.10 Measures for Ensuring System Configuration
 
-- App manifest (`manifest.yml`) enforces least-privilege API scopes
-- External egress is explicitly restricted (empty `backend` and `client` fetch permissions)
+- App manifest (`manifest.yml`) enforces least-privilege API scopes (currently `read:jira-work`, `write:jira-work`, `storage:app`, `read:jira-user`, `report:personal-data`)
+- The Product makes no external egress to third-party services. The only outbound network call leaves Atlassian's runtime is to Atlassian's own Personal Data Reporting API at `api.atlassian.com`, performed via the `privacy.reportPersonalData` helper in `@forge/api` (which handles app authentication and batching internally)
 - Forge runtime enforces execution time limits and payload size restrictions
 
 ---
 
 *This DPA is provided as a legal framework for data processing compliance. Nexus Frontier recommends that both parties consult their own legal counsel regarding their obligations under applicable Data Protection Laws.*
 
-*Document Version: 1.0 | Effective: March 7, 2026*
+*Document Version: 1.1 | Effective: March 7, 2026 | Last Updated: May 27, 2026*

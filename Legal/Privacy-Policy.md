@@ -1,8 +1,8 @@
 # Quality Compass — Privacy Policy
 
 **Effective Date:** March 7, 2026
-**Last Updated:** March 7, 2026
-**Version:** 1.0
+**Last Updated:** May 21, 2026
+**Version:** 1.2
 
 ---
 
@@ -153,9 +153,21 @@ No additional sub-processors are used.
 
 ### 7.2 Data After Uninstallation
 
-When Quality Compass is uninstalled from a Jira Cloud site, all data stored in Forge Key-Value Storage for that installation is handled according to Atlassian's app uninstallation data lifecycle. Atlassian's platform manages the deletion of Forge storage data associated with uninstalled apps.
+When Quality Compass is uninstalled from a Jira Cloud site, all data stored in Forge Key-Value Storage for that installation is handled according to Atlassian's standard Forge data lifecycle. Atlassian's platform retains uninstalled app data for up to **28 days** as a soft-delete grace period — during which the data is inaccessible to the app but recoverable if the customer reinstalls the app within 21 days. After 28 days, all data is permanently deleted by the Atlassian platform.
+
+Quality Compass does not independently retain or extend this retention period. We do not maintain any data store outside of Atlassian Forge.
 
 Client-side caches (IndexedDB) will persist in individual browsers until manually cleared or until the cached entries expire.
+
+Reference: [Atlassian Forge Data lifecycle for hosted storage](https://developer.atlassian.com/platform/forge/storage-reference/hosted-storage-data-lifecycle/).
+
+### 7.3 Personal Data Reporting to Atlassian
+
+In addition to the in-app data subject rights described in Section 8, Quality Compass implements Atlassian's **Personal Data Reporting API** as required for Marketplace cloud apps that store user personal data. On a weekly cadence, the App reports to Atlassian the list of Atlassian Account IDs for which it currently stores personal data, along with the timestamp at which each user's data was last refreshed.
+
+When Atlassian indicates that an account has been **closed**, the App automatically erases that user's personal data from Forge Storage (evaluations, name cache entries, preferences, consent records, and the personal-data index entry). When Atlassian indicates that an account's data has been **updated**, the App refreshes its cached copy from the Atlassian user APIs.
+
+This mechanism complements — and does not replace — the user-initiated data subject rights below. Reference: [Atlassian user privacy guide for app developers](https://developer.atlassian.com/platform/forge/user-privacy-guidelines/).
 
 ---
 
@@ -294,9 +306,10 @@ Quality Compass requests the following Atlassian API scopes, each with a specifi
 | `write:jira-work` | No direct writes to Jira issues — scope retained for future feature compatibility |
 | `storage:app` | Store and retrieve evaluation data, criteria, roles, audit logs, and user preferences in Forge Key-Value Storage |
 | `read:jira-user` | Read user Account IDs, Display Names, and Group Memberships for user identification and administrator verification |
+| `report:personal-data` | Required by Atlassian's Personal Data Reporting API. Allows the App to report to Atlassian, on a weekly schedule, the list of Account IDs for which it stores personal data so Atlassian can notify the App when accounts are closed or updated. See Section 7.3. |
 
 ---
 
 *This Privacy Policy is provided for informational purposes. Nexus Frontier recommends that Customers consult their own legal counsel regarding their obligations as Data Controllers.*
 
-*Document Version: 1.0 | Effective: March 7, 2026*
+*Document Version: 1.2 | Effective: March 7, 2026 | Last Updated: May 21, 2026*

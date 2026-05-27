@@ -1,8 +1,8 @@
 # Quality Compass — Cloud Security Statement
 
 **Effective Date:** March 7, 2026
-**Last Updated:** March 7, 2026
-**Version:** 1.0
+**Last Updated:** May 21, 2026
+**Version:** 1.2
 
 ---
 
@@ -23,7 +23,7 @@ Quality Compass is built entirely on the **Atlassian Forge** platform, Atlassian
 - **No self-hosted infrastructure:** The App runs on Atlassian's managed infrastructure (AWS Lambda). Nexus Frontier does not operate, manage, or have access to any servers.
 - **No external services:** The App does not communicate with any servers, APIs, or services outside of Atlassian's infrastructure.
 - **Sandboxed execution:** Forge Functions execute in an isolated, sandboxed environment managed by Atlassian.
-- **Managed runtime:** Node.js 20.x, managed and patched by Atlassian.
+- **Managed runtime:** Node.js 22.x, managed and patched by Atlassian.
 
 ### 2.2 Data Storage
 
@@ -57,18 +57,26 @@ All persistent data is stored in **Atlassian Forge Key-Value Storage**, which pr
 │                       │  - Browser-local caches only    │  │
 │                       └────────────────────────────────┘  │
 │                                                          │
-│                  NO EXTERNAL CONNECTIONS                   │
+│           ↓ Personal Data Reporting (weekly)              │
+│   ┌─────────────────────────────────────────────────┐    │
+│   │  api.atlassian.com/app/report-accounts/         │    │
+│   │  via privacy.reportPersonalData (Atlassian API) │    │
+│   └─────────────────────────────────────────────────┘    │
+│                                                          │
+│      NO THIRD-PARTY CONNECTIONS OUTSIDE ATLASSIAN          │
 └──────────────────────────────────────────────────────────┘
 ```
 
-**Key point:** There are zero outbound network connections from the App to any external domain. The `manifest.yml` declares empty external fetch permissions:
+**Key point:** The App makes no connections to any third-party domain. The only outbound network call leaving the Forge function runtime is the weekly Personal Data Reporting call to `api.atlassian.com` (Atlassian's own API). That call is performed via the `privacy.reportPersonalData` helper in `@forge/api`, which handles app authentication, batching, and the HTTP request internally — so no `remotes:` block or `permissions.external.fetch` declaration is required in `manifest.yml`. The `manifest.yml` declares only the minimum API scopes needed:
 
 ```yaml
 permissions:
-  external:
-    fetch:
-      backend: []
-      client: []
+  scopes:
+    - read:jira-work
+    - write:jira-work
+    - storage:app
+    - read:jira-user
+    - report:personal-data
 ```
 
 ---
@@ -105,6 +113,7 @@ The App requests only the minimum Jira API scopes necessary:
 | `write:jira-work` | Reserved for future Jira issue updates; not currently used for direct writes |
 | `storage:app` | Store and retrieve evaluations, criteria, roles, and configuration in Forge Storage |
 | `read:jira-user` | Read user profiles (Account ID, Display Name, group membership) for identification and admin verification |
+| `report:personal-data` | Required by Atlassian's Personal Data Reporting API. Allows the App to report to Atlassian, on a weekly schedule, the list of Account IDs for which it stores personal data so Atlassian can notify the App when accounts are closed or updated (see §4.5). |
 
 ---
 
@@ -145,6 +154,17 @@ The App provides built-in tools for GDPR compliance:
 - **Data Deletion:** Remove all personal data for a specific user across evaluations, audit logs, preferences, and role assignments
 - **Consent Management:** Record and manage user consent decisions with timestamps
 
+### 4.5 Personal Data Reporting API
+
+The App implements Atlassian's **Personal Data Reporting API** as required for Marketplace cloud apps that store user personal data ([Forge user privacy guide](https://developer.atlassian.com/platform/forge/user-privacy-guidelines/)). A scheduled trigger runs weekly and:
+
+1. Compiles the list of Atlassian Account IDs for which the App stores personal data, along with the timestamp at which each user's data was last refreshed.
+2. Calls `privacy.reportPersonalData()` from `@forge/api`, which sends the list to `https://api.atlassian.com/app/report-accounts/` in batches of up to 90 accounts. The platform helper handles app authentication, batching, and the HTTP call internally.
+3. Processes Atlassian's response: accounts marked `closed` are erased automatically via the existing GDPR erasure flow; accounts marked `updated` are refreshed from the Atlassian user APIs.
+4. Honors the Atlassian-provided `Cycle-Period` header and `Retry-After` rate-limit headers.
+
+The reporting workflow is the only outbound network destination the App calls outside its own Forge function runtime, and it targets Atlassian's own API. The `report:personal-data` scope is declared in `manifest.yml`; no `remotes:` block or `permissions.external.fetch` entry is required because the privacy module handles the outbound call internally.
+
 ---
 
 ## 5. Application Security
@@ -172,7 +192,7 @@ All user-supplied input is validated and sanitized before processing:
 | **CSV Injection** | Dangerous character prefixing in exported values |
 | **Prototype Pollution** | Use of `Object.create(null)` for untrusted data structures |
 | **Regular Expression DoS** | Optimized regex patterns |
-| **Sensitive Data in Logs** | No `console.log` statements exposing personal data; error logging uses sanitized messages |
+| **Sensitive Data in Logs** | Forge runtime logs may include Atlassian Account IDs (opaque pseudonymous identifiers) for debugging and retry diagnostics. Display names, email addresses, evaluation content, comments, and other direct personal data are not logged. All logs are stored within Atlassian's hosted Forge logging infrastructure — not exported to any external service. |
 
 ### 5.3 Content Security Policy
 
@@ -321,16 +341,16 @@ This section maps directly to the Atlassian Marketplace Privacy & Security tab q
 | Does the app log End-User Data? | **Yes.** Audit logs contain Account IDs and event details. Logs are stored in Forge Storage (within Atlassian products). |
 | Does the app share End-User Data with third-party entities? | **No.** |
 | Does the app support data residency? | Data residency is governed by Atlassian's Forge infrastructure. The App does not independently control data residency. |
-| Does the app store data after uninstallation? | Data in Forge Storage is handled per Atlassian's uninstallation lifecycle. The App does not maintain any independent data store. |
+| Does the app store End-User Data after a customer uninstalls the app? | **Yes — but only via the Atlassian Forge platform's standard 28-day soft-delete grace period.** The App itself does not retain or extend this period and maintains no independent data store. After 28 days, all data is permanently deleted by Atlassian. Minimum retention: 0 days. Maximum retention: 28 days. Reference: [Atlassian Forge Data lifecycle for hosted storage](https://developer.atlassian.com/platform/forge/storage-reference/hosted-storage-data-lifecycle/). |
 | Does the app allow custom data retention periods? | The App enforces predefined retention periods (90 days to 730 days depending on data category). |
 | Is the provider a "data controller" under GDPR? | **No.** Nexus Frontier acts as a Data Processor. The Customer is the Data Controller. |
 | Is the provider a "data processor" under GDPR? | **Yes.** With respect to all End-User Data processed through the App. |
 | Does the app have a DPA? | **Yes.** Available at [Data Processing Agreement](./Data-Processing-Agreement.md). |
 | Does the app transfer EEA data outside the EEA? | **No.** The App does not independently transfer data. Atlassian manages any cross-border transfers. |
-| Does the app use full disk encryption at rest? | **Yes.** Provided by Atlassian Forge infrastructure (AES-256). |
+| Does the app use full disk encryption at-rest for End-User Data stored outside of Atlassian or the user's browser? | **No.** Quality Compass does not store any End-User Data outside of Atlassian. All persistent storage is in Atlassian Forge Key-Value Storage, which is encrypted at-rest by Atlassian using AES-256. The Marketplace question applies only to data stored outside Atlassian — which is not the case for this app. |
 | Does the app access PATs or shared secrets? | **No.** Authentication is handled natively by Forge. |
-| API scopes requested | `read:jira-work`, `write:jira-work`, `storage:app`, `read:jira-user` |
-| Scope justification | Read issue and user data for evaluation context; store evaluation data; verify administrator privileges. |
+| API scopes requested | `read:jira-work`, `write:jira-work`, `storage:app`, `read:jira-user`, `report:personal-data` |
+| Scope justification | Read issue and user data for evaluation context; store evaluation data; verify administrator privileges; report personal-data-bearing Account IDs to Atlassian's Personal Data Reporting API on a weekly schedule. |
 
 ---
 
@@ -353,4 +373,4 @@ For security questions, vulnerability reports, or compliance inquiries:
 
 ---
 
-*Document Version: 1.0 | Effective: March 7, 2026*
+*Document Version: 1.2 | Effective: March 7, 2026 | Last Updated: May 21, 2026*
