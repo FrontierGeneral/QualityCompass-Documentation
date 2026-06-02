@@ -15,7 +15,7 @@ Our focus: the problems hiding in plain sight — quality gaps, evaluation incon
 
 ## Products
 
-### Quality Compass
+### Quality Scorecard for Jira
 
 Structured ticket quality evaluation for Jira. Define criteria, score tickets, track agent and evaluator performance, detect scoring bias, enforce coverage targets, and export analytics — all from inside Jira.
 

@@ -2,7 +2,7 @@
 
 ## Team-Specific Workflows
 
-This guide provides step-by-step workflows for different team roles and common scenarios in the Quality Compass app.
+This guide provides step-by-step workflows for different team roles and common scenarios in the Quality Scorecard for Jira app.
 
 ---
 

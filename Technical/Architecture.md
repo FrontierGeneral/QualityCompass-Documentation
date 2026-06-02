@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Quality Compass is built on the Atlassian Forge platform, providing a comprehensive quality assurance evaluation system integrated directly into Jira. This document describes the technical architecture, system components, and design decisions.
+The Quality Scorecard for Jira is built on the Atlassian Forge platform, providing a comprehensive quality assurance evaluation system integrated directly into Jira. This document describes the technical architecture, system components, and design decisions.
 
 **Quick Links:**
 - [Installation Guide](./Installation.md) - Get started with deployment
@@ -20,7 +20,7 @@ The Quality Compass is built on the Atlassian Forge platform, providing a compre
 │  ┌─────────────────────────────────────────────────────┐  │
 │  │              Forge Platform Runtime                  │  │
 │  │  ┌─────────────────────────────────────────────┐   │  │
-│  │  │          Quality Compass                        │   │  │
+│  │  │          Quality Scorecard for Jira                        │   │  │
 │  │  │  ┌──────────────┐  ┌──────────────────┐   │   │  │
 │  │  │  │   Frontend   │  │    Backend       │   │   │  │
 │  │  │  │   (React)    │  │   (Resolvers)    │   │   │  │
@@ -312,7 +312,7 @@ permissions:
 
 ### File Structure
 ```
-quality-compass/
+quality-scorecard-for-jira/
 ├── src/
 │   ├── index.js              # Forge resolvers
 │   ├── components/           # React components

@@ -1,4 +1,4 @@
-# Quality Compass — Provider-Specific Terms
+# Quality Scorecard for Jira — Provider-Specific Terms
 
 **Effective Date:** March 7, 2026
 **Last Updated:** March 7, 2026
@@ -8,7 +8,7 @@
 
 ## Overview
 
-These Provider-Specific Terms supplement the [Bonterms Standard End User Agreement (Version 1.0)](https://www.atlassian.com/licensing/marketplace/end-user-agreement-v1) ("Standard Agreement") for the Quality Compass application ("Product") provided by Nexus Frontier ("Provider") through the Atlassian Marketplace.
+These Provider-Specific Terms supplement the [Bonterms Standard End User Agreement (Version 1.0)](https://www.atlassian.com/licensing/marketplace/end-user-agreement-v1) ("Standard Agreement") for the Quality Scorecard for Jira application ("Product") provided by Nexus Frontier ("Provider") through the Atlassian Marketplace.
 
 Together, these Provider-Specific Terms and the Standard Agreement form the complete Agreement between Provider and Customer. In the event of a conflict, these Provider-Specific Terms take precedence over the Standard Agreement, as set forth in Section 1.4 of the Standard Agreement.
 
@@ -18,7 +18,7 @@ Capitalized terms not defined herein have the meanings given to them in the Stan
 
 ## 1. Product Description
 
-**Quality Compass** is a Jira Cloud application built on the Atlassian Forge platform that provides quality assurance evaluation, scoring, and analytics capabilities for Jira tickets. The Product enables organizations to:
+**Quality Scorecard for Jira** is a Jira Cloud application built on the Atlassian Forge platform that provides quality assurance evaluation, scoring, and analytics capabilities for Jira tickets. The Product enables organizations to:
 
 - Evaluate Jira tickets against configurable quality criteria
 - Track evaluator and agent performance through analytics dashboards
@@ -46,7 +46,7 @@ Pursuant to Section 19.3 of the Standard Agreement, Provider's notice address is
 | **Provider** | Nexus Frontier |
 | **Attention** | Legal Department |
 | **Email** | support@nexusfrontier.net |
-| **Subject Line** | Quality Compass — Legal Notice |
+| **Subject Line** | Quality Scorecard for Jira — Legal Notice |
 
 ---
 
@@ -54,7 +54,7 @@ Pursuant to Section 19.3 of the Standard Agreement, Provider's notice address is
 
 Pursuant to Section 3.3 of the Standard Agreement, the parties shall adhere to the Data Processing Agreement (DPA) available at:
 
-- [Quality Compass Data Processing Agreement](./Data-Processing-Agreement.md)
+- [Quality Scorecard for Jira Data Processing Agreement](./Data-Processing-Agreement.md)
 
 The DPA governs Provider's processing of Customer Data that constitutes personal data under applicable data protection laws, including the GDPR.
 
@@ -98,7 +98,7 @@ Pursuant to Section 5.1 of the Standard Agreement, Provider offers the following
 | Channel | Details |
 |---------|---------|
 | **Email** | support@nexusfrontier.net |
-| **Marketplace Listing** | Via the Quality Compass Marketplace page |
+| **Marketplace Listing** | Via the Quality Scorecard for Jira Marketplace page |
 
 ### 6.2 Support Scope
 

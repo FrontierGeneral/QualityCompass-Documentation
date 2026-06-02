@@ -2,10 +2,10 @@
 
 ## General Questions
 
-### What is the Quality Compass?
-The Quality Compass is a quality assurance evaluation system integrated directly into Jira. It allows teams to systematically evaluate ticket quality, track performance metrics, and generate comprehensive analytics reports.
+### What is the Quality Scorecard for Jira?
+The Quality Scorecard for Jira is a quality assurance evaluation system integrated directly into Jira. It allows teams to systematically evaluate ticket quality, track performance metrics, and generate comprehensive analytics reports.
 
-### Who can use the Quality Compass?
+### Who can use the Quality Scorecard for Jira?
 Anyone with access to your Jira project can view analytics (with appropriate permissions). Creating evaluations typically requires "Edit Issues" permission, while administrative functions require project admin rights.
 
 ### Is training required to use the app?

@@ -9,7 +9,7 @@
 
 ## Security Overview
 
-The Quality Compass implements comprehensive security measures to protect data integrity, ensure user privacy, and maintain compliance with industry standards.
+The Quality Scorecard for Jira implements comprehensive security measures to protect data integrity, ensure user privacy, and maintain compliance with industry standards.
 
 ## Security Architecture
 

@@ -1,4 +1,4 @@
-# Quality Compass — Data Processing Agreement (DPA)
+# Quality Scorecard for Jira — Data Processing Agreement (DPA)
 
 **Effective Date:** March 7, 2026
 **Last Updated:** May 27, 2026
@@ -8,7 +8,7 @@
 
 ## 1. Introduction and Scope
 
-This Data Processing Agreement ("DPA") is entered into between the organization that installs Quality Compass ("Customer," "Controller") and Nexus Frontier ("Provider," "Processor"), and supplements the Agreement between Customer and Provider for the Quality Compass application ("Product").
+This Data Processing Agreement ("DPA") is entered into between the organization that installs Quality Scorecard for Jira ("Customer," "Controller") and Nexus Frontier ("Provider," "Processor"), and supplements the Agreement between Customer and Provider for the Quality Scorecard for Jira application ("Product").
 
 This DPA applies to the processing of Personal Data by Provider on behalf of Customer in connection with Customer's use of the Product. This DPA is governed by and forms part of the Agreement, including the Provider-Specific Terms.
 
@@ -269,7 +269,7 @@ For any matters related to this DPA:
 |---|---|
 | **Provider** | Nexus Frontier |
 | **Email** | support@nexusfrontier.net |
-| **Subject Line** | Quality Compass — DPA Inquiry |
+| **Subject Line** | Quality Scorecard for Jira — DPA Inquiry |
 
 ---
 

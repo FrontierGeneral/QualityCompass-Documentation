@@ -27,8 +27,8 @@ forge --version # v6.x or higher
 
 #### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-org/quality-compass.git
-cd quality-compass
+git clone https://github.com/your-org/quality-scorecard-for-jira.git
+cd quality-scorecard-for-jira
 ```
 
 #### 2. Install Dependencies
@@ -62,7 +62,7 @@ cp .env.example .env
 ## Project Structure (current)
 
 ```
-quality-compass/
+quality-scorecard-for-jira/
 ├── src/
 │   ├── index.js              # Forge resolvers
 │   ├── components/           # React components
@@ -291,7 +291,7 @@ forge logs --filter error
 
 ```javascript
 // Add debug logging
-console.log('[Quality Compass] Data loaded:', data);
+console.log('[Quality Scorecard for Jira] Data loaded:', data);
 
 // Use breakpoints
 debugger; // Execution will pause here

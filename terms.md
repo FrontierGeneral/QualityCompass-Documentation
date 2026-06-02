@@ -4,7 +4,7 @@ title: Terms of Service
 permalink: /terms/
 ---
 
-# Quality Compass — Provider-Specific Terms
+# Quality Scorecard for Jira — Provider-Specific Terms
 
 **Effective Date:** March 7, 2026
 **Last Updated:** March 7, 2026
@@ -14,7 +14,7 @@ permalink: /terms/
 
 ## Overview
 
-These Provider-Specific Terms supplement the [Bonterms Standard End User Agreement (Version 1.0)](https://www.atlassian.com/licensing/marketplace/end-user-agreement-v1) ("Standard Agreement") for the Quality Compass application ("Product") provided by Nexus Frontier ("Provider") through the Atlassian Marketplace.
+These Provider-Specific Terms supplement the [Bonterms Standard End User Agreement (Version 1.0)](https://www.atlassian.com/licensing/marketplace/end-user-agreement-v1) ("Standard Agreement") for the Quality Scorecard for Jira application ("Product") provided by Nexus Frontier ("Provider") through the Atlassian Marketplace.
 
 Together, these Provider-Specific Terms and the Standard Agreement form the complete Agreement between Provider and Customer.
 
@@ -22,7 +22,7 @@ Together, these Provider-Specific Terms and the Standard Agreement form the comp
 
 ## 1. Product Description
 
-**Quality Compass** is a Jira Cloud application built on the Atlassian Forge platform that provides quality assurance evaluation, scoring, and analytics capabilities for Jira tickets.
+**Quality Scorecard for Jira** is a Jira Cloud application built on the Atlassian Forge platform that provides quality assurance evaluation, scoring, and analytics capabilities for Jira tickets.
 
 ---
 
@@ -83,7 +83,7 @@ The "General Cap" is the total amounts paid by Customer to Provider in the twelv
 |---|---|
 | **Provider** | Nexus Frontier |
 | **Email** | [support@nexusfrontier.net](mailto:support@nexusfrontier.net) |
-| **Subject Line** | Quality Compass — Legal Notice |
+| **Subject Line** | Quality Scorecard for Jira — Legal Notice |
 
 ---
 

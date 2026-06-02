@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Quality Compass provides a comprehensive set of Forge resolver functions for interacting with evaluations, analytics, and Jira data. All API calls are made through the Forge Bridge using the `invoke` function.
+The Quality Scorecard for Jira provides a comprehensive set of Forge resolver functions for interacting with evaluations, analytics, and Jira data. All API calls are made through the Forge Bridge using the `invoke` function.
 
 For security implementation details, see [Security Documentation](./Security.md).  
 For development setup and testing, see [Development Guide](./Development.md).  

@@ -1,4 +1,4 @@
-# Quality Compass — Privacy Policy
+# Quality Scorecard for Jira — Privacy Policy
 
 **Effective Date:** March 7, 2026
 **Last Updated:** May 21, 2026
@@ -8,17 +8,17 @@
 
 ## 1. Introduction
 
-This Privacy Policy describes how Nexus Frontier ("we," "us," or "our") collects, uses, stores, and protects information through the Quality Compass application ("the App"), a Jira Cloud app available on the Atlassian Marketplace.
+This Privacy Policy describes how Nexus Frontier ("we," "us," or "our") collects, uses, stores, and protects information through the Quality Scorecard for Jira application ("the App"), a Jira Cloud app available on the Atlassian Marketplace.
 
-Quality Compass is a quality assurance and ticket evaluation management tool that operates entirely within the Atlassian Forge platform. We are committed to protecting the privacy of our users and complying with applicable data protection laws, including the General Data Protection Regulation (GDPR) and the California Consumer Privacy Act (CCPA).
+Quality Scorecard for Jira is a quality assurance and ticket evaluation management tool that operates entirely within the Atlassian Forge platform. We are committed to protecting the privacy of our users and complying with applicable data protection laws, including the General Data Protection Regulation (GDPR) and the California Consumer Privacy Act (CCPA).
 
-By installing or using Quality Compass, you acknowledge that you have read and understood this Privacy Policy.
+By installing or using Quality Scorecard for Jira, you acknowledge that you have read and understood this Privacy Policy.
 
 ---
 
 ## 2. Data Controller and Data Processor
 
-- **Data Controller:** The organization ("Customer") that installs and administers Quality Compass on their Atlassian Jira Cloud instance is the Data Controller for End-User Data processed through the App.
+- **Data Controller:** The organization ("Customer") that installs and administers Quality Scorecard for Jira on their Atlassian Jira Cloud instance is the Data Controller for End-User Data processed through the App.
 - **Data Processor:** Nexus Frontier acts as a Data Processor, processing End-User Data on behalf of the Customer in accordance with this Privacy Policy and our Data Processing Agreement (DPA).
 - **Sub-processor:** Atlassian Pty Ltd is a sub-processor, as all App data is stored within Atlassian's Forge infrastructure.
 
@@ -71,7 +71,7 @@ Client-side caches are stored only in the individual user's browser and are not 
 
 ## 4. How We Use Data
 
-We use the collected data solely to provide and operate Quality Compass functionality:
+We use the collected data solely to provide and operate Quality Scorecard for Jira functionality:
 
 | Purpose | Legal Basis (GDPR) |
 |---------|-------------------|
@@ -88,7 +88,7 @@ We do **not** use data for:
 - Profiling or automated decision-making
 - Selling or renting to third parties
 - Training machine learning models
-- Any purpose unrelated to operating Quality Compass
+- Any purpose unrelated to operating Quality Scorecard for Jira
 
 ---
 
@@ -104,7 +104,7 @@ All server-side data is stored in **Atlassian Forge Key-Value Storage**, which i
 - Subject to Atlassian's own security and compliance certifications (SOC 2, ISO 27001, ISO 27018)
 - Isolated per app and per Jira site (multi-tenant isolation)
 
-Quality Compass does **not** store any data on servers owned or operated by Nexus Frontier.
+Quality Scorecard for Jira does **not** store any data on servers owned or operated by Nexus Frontier.
 
 ### 5.2 Client-Side Storage
 
@@ -112,7 +112,7 @@ Temporary caches are stored in the user's browser (IndexedDB and in-memory) and 
 
 ### 5.3 Data Residency
 
-Because all data is stored within Atlassian Forge infrastructure, data residency is governed by Atlassian's own data residency policies. Quality Compass does not independently control or offer data residency selection. Please refer to [Atlassian's Data Residency documentation](https://support.atlassian.com/security-and-access-policies/docs/understand-data-residency/) for details on where your data is stored.
+Because all data is stored within Atlassian Forge infrastructure, data residency is governed by Atlassian's own data residency policies. Quality Scorecard for Jira does not independently control or offer data residency selection. Please refer to [Atlassian's Data Residency documentation](https://support.atlassian.com/security-and-access-policies/docs/understand-data-residency/) for details on where your data is stored.
 
 ---
 
@@ -120,7 +120,7 @@ Because all data is stored within Atlassian Forge infrastructure, data residency
 
 ### 6.1 No External Data Transfers
 
-Quality Compass does **not**:
+Quality Scorecard for Jira does **not**:
 
 - Send data to any external servers, APIs, or services
 - Use third-party analytics, tracking, or monitoring services
@@ -153,9 +153,9 @@ No additional sub-processors are used.
 
 ### 7.2 Data After Uninstallation
 
-When Quality Compass is uninstalled from a Jira Cloud site, all data stored in Forge Key-Value Storage for that installation is handled according to Atlassian's standard Forge data lifecycle. Atlassian's platform retains uninstalled app data for up to **28 days** as a soft-delete grace period — during which the data is inaccessible to the app but recoverable if the customer reinstalls the app within 21 days. After 28 days, all data is permanently deleted by the Atlassian platform.
+When Quality Scorecard for Jira is uninstalled from a Jira Cloud site, all data stored in Forge Key-Value Storage for that installation is handled according to Atlassian's standard Forge data lifecycle. Atlassian's platform retains uninstalled app data for up to **28 days** as a soft-delete grace period — during which the data is inaccessible to the app but recoverable if the customer reinstalls the app within 21 days. After 28 days, all data is permanently deleted by the Atlassian platform.
 
-Quality Compass does not independently retain or extend this retention period. We do not maintain any data store outside of Atlassian Forge.
+Quality Scorecard for Jira does not independently retain or extend this retention period. We do not maintain any data store outside of Atlassian Forge.
 
 Client-side caches (IndexedDB) will persist in individual browsers until manually cleared or until the cached entries expire.
 
@@ -163,7 +163,7 @@ Reference: [Atlassian Forge Data lifecycle for hosted storage](https://developer
 
 ### 7.3 Personal Data Reporting to Atlassian
 
-In addition to the in-app data subject rights described in Section 8, Quality Compass implements Atlassian's **Personal Data Reporting API** as required for Marketplace cloud apps that store user personal data. On a weekly cadence, the App reports to Atlassian the list of Atlassian Account IDs for which it currently stores personal data, along with the timestamp at which each user's data was last refreshed.
+In addition to the in-app data subject rights described in Section 8, Quality Scorecard for Jira implements Atlassian's **Personal Data Reporting API** as required for Marketplace cloud apps that store user personal data. On a weekly cadence, the App reports to Atlassian the list of Atlassian Account IDs for which it currently stores personal data, along with the timestamp at which each user's data was last refreshed.
 
 When Atlassian indicates that an account has been **closed**, the App automatically erases that user's personal data from Forge Storage (evaluations, name cache entries, preferences, consent records, and the personal-data index entry). When Atlassian indicates that an account's data has been **updated**, the App refreshes its cached copy from the Atlassian user APIs.
 
@@ -173,7 +173,7 @@ This mechanism complements — and does not replace — the user-initiated data 
 
 ## 8. Data Subject Rights (GDPR)
 
-Quality Compass includes built-in GDPR compliance features. Users and administrators can exercise the following rights:
+Quality Scorecard for Jira includes built-in GDPR compliance features. Users and administrators can exercise the following rights:
 
 ### 8.1 Right of Access (Article 15)
 
@@ -250,7 +250,7 @@ For full security details, see our [Cloud Security Statement](./Cloud-Security-S
 
 ## 11. Cookies and Tracking
 
-Quality Compass does **not** use cookies, web beacons, pixels, or any tracking technologies. The App does not collect IP addresses, device IDs, or browser fingerprints.
+Quality Scorecard for Jira does **not** use cookies, web beacons, pixels, or any tracking technologies. The App does not collect IP addresses, device IDs, or browser fingerprints.
 
 Client-side caching uses the browser's IndexedDB API for performance purposes only and does not track user behavior across sites or sessions.
 
@@ -258,13 +258,13 @@ Client-side caching uses the browser's IndexedDB API for performance purposes on
 
 ## 12. Children's Privacy
 
-Quality Compass is a business productivity tool designed for use by organizations and their employees within Jira Cloud. It is not intended for use by individuals under the age of 16. We do not knowingly collect personal data from children.
+Quality Scorecard for Jira is a business productivity tool designed for use by organizations and their employees within Jira Cloud. It is not intended for use by individuals under the age of 16. We do not knowingly collect personal data from children.
 
 ---
 
 ## 13. International Data Transfers
 
-Quality Compass does not independently transfer data across borders. All data remains within Atlassian's Forge infrastructure, and any international data transfers are governed by Atlassian's data transfer mechanisms and policies. Atlassian maintains Standard Contractual Clauses (SCCs) and other approved transfer mechanisms for data transfers from the European Economic Area (EEA).
+Quality Scorecard for Jira does not independently transfer data across borders. All data remains within Atlassian's Forge infrastructure, and any international data transfers are governed by Atlassian's data transfer mechanisms and policies. Atlassian maintains Standard Contractual Clauses (SCCs) and other approved transfer mechanisms for data transfers from the European Economic Area (EEA).
 
 For details, see [Atlassian's Cross-Border Data Transfer documentation](https://www.atlassian.com/legal/data-transfer-impact-assessment).
 
@@ -290,7 +290,7 @@ For questions, concerns, or requests related to this Privacy Policy or your pers
 |---|---|
 | **Provider** | Nexus Frontier |
 | **Email** | support@nexusfrontier.net |
-| **Subject Line** | Quality Compass — Privacy Inquiry |
+| **Subject Line** | Quality Scorecard for Jira — Privacy Inquiry |
 
 For data subject requests, please include your Jira Account ID and the Jira Cloud site URL where the App is installed.
 
@@ -298,7 +298,7 @@ For data subject requests, please include your Jira Account ID and the Jira Clou
 
 ## 16. Jira API Scope Justification
 
-Quality Compass requests the following Atlassian API scopes, each with a specific, limited purpose:
+Quality Scorecard for Jira requests the following Atlassian API scopes, each with a specific, limited purpose:
 
 | Scope | Purpose |
 |-------|---------|

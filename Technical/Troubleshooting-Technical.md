@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides solutions for technical issues that administrators and developers may encounter with the Quality Compass.
+This guide provides solutions for technical issues that administrators and developers may encounter with the Quality Scorecard for Jira.
 
 ## Quick Links
 - [Architecture Overview](./Architecture.md) - System design for context
@@ -19,7 +19,7 @@ This guide provides solutions for technical issues that administrators and devel
 
 **Symptoms:**
 - App installed successfully but not visible in projects
-- "Apps" menu doesn't show Quality Compass
+- "Apps" menu doesn't show Quality Scorecard for Jira
 
 **Diagnosis:**
 ```bash
@@ -706,7 +706,7 @@ const ALERT_THRESHOLDS = {
 
 2. **Level 2: Development team**
    - Email: support@nexusfrontier.net
-   - Slack: #quality-compass-dev
+   - Slack: #quality-scorecard-for-jira-dev
 
 3. **Level 3: Atlassian support**
    - For Forge platform issues

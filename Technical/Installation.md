@@ -9,7 +9,7 @@
 
 ## Prerequisites
 
-Before installing the Quality Compass, ensure you have the following:
+Before installing the Quality Scorecard for Jira, ensure you have the following:
 
 ### System Requirements
 - **Jira Cloud**: Active Jira Cloud instance
@@ -40,7 +40,7 @@ The installing user must have:
    ```
 
 3. **Verify Installation**
-   - Open your Jira project → Apps → Quality Compass
+   - Open your Jira project → Apps → Quality Scorecard for Jira
    - Ensure dashboards/tabs load
 
 ### Step 2: Initial Configuration
@@ -49,7 +49,7 @@ The installing user must have:
 
 1. **Access App Settings**
    ```
-   Navigate to: Project Settings → Apps → Quality Compass
+   Navigate to: Project Settings → Apps → Quality Scorecard for Jira
    ```
 
 2. **Set Allowed Projects**
@@ -139,7 +139,7 @@ The app uses a client-side concurrency limiter (default 8) and in-flight request
 
 1. **Check App Access**
    ```
-   Navigate to any project → Apps → Quality Compass
+   Navigate to any project → Apps → Quality Scorecard for Jira
    The dashboard should load without errors
    ```
 
@@ -274,7 +274,7 @@ await storage.set('evaluations', []);
 
 1. **Navigate to Manage Apps**
    ```
-   Apps → Manage apps → Quality Compass
+   Apps → Manage apps → Quality Scorecard for Jira
    ```
 
 2. **Uninstall**

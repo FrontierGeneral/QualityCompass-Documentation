@@ -1,8 +1,8 @@
-# Quality Compass Documentation
+# Quality Scorecard for Jira Documentation
 
 ## Documentation Overview
 
-Comprehensive documentation for Quality Compass — a quality assurance and evaluation management system for Jira, built on Atlassian Forge.
+Comprehensive documentation for Quality Scorecard for Jira — a quality assurance and evaluation management system for Jira, built on Atlassian Forge.
 
 ### Quick Navigation
 

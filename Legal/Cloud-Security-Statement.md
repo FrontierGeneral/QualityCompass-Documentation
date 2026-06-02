@@ -1,4 +1,4 @@
-# Quality Compass — Cloud Security Statement
+# Quality Scorecard for Jira — Cloud Security Statement
 
 **Effective Date:** March 7, 2026
 **Last Updated:** May 21, 2026
@@ -8,9 +8,9 @@
 
 ## 1. Overview
 
-This Cloud Security Statement describes the security practices, architecture, and controls implemented for the Quality Compass application ("the App"), a Jira Cloud application built on the Atlassian Forge platform.
+This Cloud Security Statement describes the security practices, architecture, and controls implemented for the Quality Scorecard for Jira application ("the App"), a Jira Cloud application built on the Atlassian Forge platform.
 
-Quality Compass is designed with a security-first approach, leveraging Atlassian's enterprise-grade infrastructure for all data storage, authentication, and runtime execution.
+Quality Scorecard for Jira is designed with a security-first approach, leveraging Atlassian's enterprise-grade infrastructure for all data storage, authentication, and runtime execution.
 
 ---
 
@@ -18,7 +18,7 @@ Quality Compass is designed with a security-first approach, leveraging Atlassian
 
 ### 2.1 Platform
 
-Quality Compass is built entirely on the **Atlassian Forge** platform, Atlassian's serverless, cloud-native app development framework. This means:
+Quality Scorecard for Jira is built entirely on the **Atlassian Forge** platform, Atlassian's serverless, cloud-native app development framework. This means:
 
 - **No self-hosted infrastructure:** The App runs on Atlassian's managed infrastructure (AWS Lambda). Nexus Frontier does not operate, manage, or have access to any servers.
 - **No external services:** The App does not communicate with any servers, APIs, or services outside of Atlassian's infrastructure.
@@ -45,7 +45,7 @@ All persistent data is stored in **Atlassian Forge Key-Value Storage**, which pr
 │                  Atlassian Cloud                          │
 │                                                          │
 │  ┌──────────────┐    ┌────────────────────────────────┐  │
-│  │  Jira Cloud   │◄──►│  Quality Compass (Forge App)   │  │
+│  │  Jira Cloud   │◄──►│  Quality Scorecard for Jira (Forge App)   │  │
 │  │  REST APIs    │    │  - Forge Functions (resolvers)  │  │
 │  └──────────────┘    │  - Forge Key-Value Storage      │  │
 │                       └────────────┬───────────────────┘  │
@@ -297,7 +297,7 @@ The Atlassian Forge platform independently provides:
 |---|---|
 | **Security Contact** | Nexus Frontier Support |
 | **Email** | support@nexusfrontier.net |
-| **Subject Line** | Quality Compass — Security Incident |
+| **Subject Line** | Quality Scorecard for Jira — Security Incident |
 
 ---
 
@@ -305,7 +305,7 @@ The Atlassian Forge platform independently provides:
 
 ### 10.1 Atlassian Infrastructure Compliance
 
-Quality Compass benefits from Atlassian's infrastructure certifications:
+Quality Scorecard for Jira benefits from Atlassian's infrastructure certifications:
 
 | Certification | Scope |
 |--------------|-------|
@@ -347,7 +347,7 @@ This section maps directly to the Atlassian Marketplace Privacy & Security tab q
 | Is the provider a "data processor" under GDPR? | **Yes.** With respect to all End-User Data processed through the App. |
 | Does the app have a DPA? | **Yes.** Available at [Data Processing Agreement](./Data-Processing-Agreement.md). |
 | Does the app transfer EEA data outside the EEA? | **No.** The App does not independently transfer data. Atlassian manages any cross-border transfers. |
-| Does the app use full disk encryption at-rest for End-User Data stored outside of Atlassian or the user's browser? | **No.** Quality Compass does not store any End-User Data outside of Atlassian. All persistent storage is in Atlassian Forge Key-Value Storage, which is encrypted at-rest by Atlassian using AES-256. The Marketplace question applies only to data stored outside Atlassian — which is not the case for this app. |
+| Does the app use full disk encryption at-rest for End-User Data stored outside of Atlassian or the user's browser? | **No.** Quality Scorecard for Jira does not store any End-User Data outside of Atlassian. All persistent storage is in Atlassian Forge Key-Value Storage, which is encrypted at-rest by Atlassian using AES-256. The Marketplace question applies only to data stored outside Atlassian — which is not the case for this app. |
 | Does the app access PATs or shared secrets? | **No.** Authentication is handled natively by Forge. |
 | API scopes requested | `read:jira-work`, `write:jira-work`, `storage:app`, `read:jira-user`, `report:personal-data` |
 | Scope justification | Read issue and user data for evaluation context; store evaluation data; verify administrator privileges; report personal-data-bearing Account IDs to Atlassian's Personal Data Reporting API on a weekly schedule. |
@@ -369,7 +369,7 @@ For security questions, vulnerability reports, or compliance inquiries:
 | **Provider** | Nexus Frontier |
 | **Security Contact** | Nexus Frontier Support |
 | **Email** | support@nexusfrontier.net |
-| **Subject Line** | Quality Compass — Security Inquiry |
+| **Subject Line** | Quality Scorecard for Jira — Security Inquiry |
 
 ---
 

@@ -1,12 +1,12 @@
 # Getting Started Guide
 
-## Welcome to Quality Compass app! 🎯
+## Welcome to Quality Scorecard for Jira app! 🎯
 
-This guide will help you get started with the Quality Compass app, a powerful tool for managing quality assurance evaluations directly within your Jira projects.
+This guide will help you get started with the Quality Scorecard for Jira app, a powerful tool for managing quality assurance evaluations directly within your Jira projects.
 
-## What is the Quality Compass app?
+## What is the Quality Scorecard for Jira app?
 
-The Quality Compass app helps teams:
+The Quality Scorecard for Jira app helps teams:
 - ✅ Evaluate ticket quality systematically
 - 📊 Track performance metrics over time
 - 👥 Monitor agent and evaluator performance
@@ -21,9 +21,9 @@ After your administrator has installed the app, you can access it from any Jira 
 
 1. **Open your Jira project**
 2. **Look for the "Apps" menu** in the project navigation
-3. **Click on "Quality Compass app"** to open the dashboard
+3. **Click on "Quality Scorecard for Jira app"** to open the dashboard
 
-![Quality Compass app Menu Location](../Images/Screenshots/menu-location.png)
+![Quality Scorecard for Jira app Menu Location](../Images/Screenshots/menu-location.png)
 
 ### 2. Understanding the Dashboard
 

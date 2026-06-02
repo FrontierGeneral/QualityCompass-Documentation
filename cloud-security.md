@@ -4,7 +4,7 @@ title: Cloud Security
 permalink: /cloud-security/
 ---
 
-# Quality Compass — Cloud Security Statement
+# Quality Scorecard for Jira — Cloud Security Statement
 
 **Effective Date:** March 7, 2026
 **Last Updated:** March 7, 2026
@@ -14,7 +14,7 @@ permalink: /cloud-security/
 
 ## Architecture
 
-Quality Compass is built entirely on **Atlassian Forge** — Atlassian's serverless, cloud-native platform. This means:
+Quality Scorecard for Jira is built entirely on **Atlassian Forge** — Atlassian's serverless, cloud-native platform. This means:
 
 - **No self-hosted infrastructure** — runs on Atlassian's managed infrastructure
 - **No external services** — zero outbound network connections
@@ -103,7 +103,7 @@ Atlassian infrastructure certifications: SOC 2 Type II, ISO 27001, ISO 27018, CS
 ## Contact
 
 **Email:** [support@nexusfrontier.net](mailto:support@nexusfrontier.net)
-**Subject:** Quality Compass — Security Inquiry
+**Subject:** Quality Scorecard for Jira — Security Inquiry
 
 *The full Cloud Security Statement is available in our [Legal documentation](./Legal/Cloud-Security-Statement.md).*
 

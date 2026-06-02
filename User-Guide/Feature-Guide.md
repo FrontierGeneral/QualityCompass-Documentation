@@ -2,7 +2,7 @@
 
 ## Complete Feature Reference
 
-This guide provides detailed information about every feature in the Quality Compass app. Each section includes step-by-step instructions, tips, and best practices.
+This guide provides detailed information about every feature in the Quality Scorecard for Jira app. Each section includes step-by-step instructions, tips, and best practices.
 
 ## 📊 Analytics Dashboard
 
