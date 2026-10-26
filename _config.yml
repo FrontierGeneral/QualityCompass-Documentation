@@ -1,7 +1,8 @@
 title: Nexus Frontier
 description: Quality intelligence tools for the Atlassian ecosystem
 theme: minima
-baseurl: "/NexusFrontier-Documentation"
+# Must match this repository's name for project Pages: https://frontiergeneral.github.io/QualityCompass-Documentation/
+baseurl: "/QualityCompass-Documentation"
 url: "https://frontiergeneral.github.io"
 
 header_pages:

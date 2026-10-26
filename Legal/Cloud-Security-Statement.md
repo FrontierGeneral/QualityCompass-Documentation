@@ -1,8 +1,8 @@
 # Quality Scorecard for Jira — Cloud Security Statement
 
 **Effective Date:** March 7, 2026
-**Last Updated:** May 21, 2026
-**Version:** 1.2
+**Last Updated:** October 25, 2026
+**Version:** 1.4
 
 ---
 
@@ -73,7 +73,6 @@ All persistent data is stored in **Atlassian Forge Key-Value Storage**, which pr
 permissions:
   scopes:
     - read:jira-work
-    - write:jira-work
     - storage:app
     - read:jira-user
     - report:personal-data
@@ -99,20 +98,20 @@ The App implements a multi-layer authorization model:
 | Layer | Mechanism | Description |
 |-------|-----------|-------------|
 | **Platform** | Atlassian Forge | Only authenticated Jira users can access the App |
-| **Admin Verification** | Jira Group Membership | Administrative functions verify the user belongs to the configured admin group via the Jira permissions API |
-| **RBAC** | App-Level Roles | Per-project role-based access control with configurable permissions (view analytics, create evaluations, manage settings, etc.) |
-| **Data Scoping** | Project-Level Isolation | Users can only access evaluations for projects they have been granted access to |
+| **Admin Verification** | Jira global permission check | Administrative functions verify that the user holds Jira's global **Administer Jira** permission via `GET /rest/api/3/mypermissions?permissions=ADMINISTER`. Optionally, a Customer may designate a Jira group whose members are also treated as App administrators. |
+| **RBAC** | App-Level Roles | Per-project role-based access control with nine permissions (dashboard access, five dashboard tabs, settings, evaluate tickets, delete evaluations); roles and assignments are stored per project and managed only by administrators |
+| **Server-Side Enforcement** | Forge resolver checks | Every backend function re-checks the caller's effective permissions; generic storage access is limited to an explicit allow-list of keys, and all Jira searches are constrained to the administrator-approved project list |
+| **Data Scoping** | Project-Level Isolation | Users can only open dashboards, evaluate tickets and fetch ticket metadata for projects they have been granted access to; ticket metadata lookups additionally verify the user's Jira **Browse Projects** permission |
 
 ### 3.3 API Scopes (Least Privilege)
 
-The App requests only the minimum Jira API scopes necessary:
+The App requests only the minimum Jira API scopes necessary. It does not request any write scope and never modifies Jira issues.
 
 | Scope | Justification |
 |-------|---------------|
-| `read:jira-work` | Read issue data (key, summary, status, priority, assignee) for evaluation context |
-| `write:jira-work` | Reserved for future Jira issue updates; not currently used for direct writes |
-| `storage:app` | Store and retrieve evaluations, criteria, roles, and configuration in Forge Storage |
-| `read:jira-user` | Read user profiles (Account ID, Display Name, group membership) for identification and admin verification |
+| `read:jira-work` | Read issue, project and permission data (key, summary, status, priority, type, assignee, reporter, dates) for evaluation context, analytics and access checks |
+| `storage:app` | Store and retrieve evaluations, criteria, roles, audit logs and configuration in Forge Storage |
+| `read:jira-user` | Read user profiles (Account ID, Display Name; group membership only when an optional admin group is configured) for identification and admin verification |
 | `report:personal-data` | Required by Atlassian's Personal Data Reporting API. Allows the App to report to Atlassian, on a weekly schedule, the list of Account IDs for which it stores personal data so Atlassian can notify the App when accounts are closed or updated (see §4.5). |
 
 ---
@@ -123,36 +122,47 @@ The App requests only the minimum Jira API scopes necessary:
 
 | Classification | Data Types | Protection Level |
 |---------------|------------|-----------------|
-| **Confidential** | Jira Account IDs, Email Addresses | High — encrypted at rest and in transit, access controlled |
-| **Internal** | Evaluation scores, feedback, audit logs | Standard — encrypted at rest and in transit |
-| **Public** | Evaluation criteria definitions, coverage targets | Standard — no personal data |
+| **Confidential** | Jira Account IDs and Display Names stored in evaluations, role assignments, caches and audit logs | High — encrypted at rest and in transit, access controlled |
+| **Internal** | Evaluation scores, free-text feedback, audit event details | Standard — encrypted at rest and in transit |
+| **Configuration** | Evaluation criteria definitions, coverage targets, project allow-list | Standard — no personal data except the Account ID of the administrator who made a change |
+
+E-mail addresses are not stored by the App. Issue content is read from Jira at display time and cached only in the user's browser.
 
 ### 4.2 Personal Data Handling
 
 | Principle | Implementation |
 |-----------|---------------|
-| **Data Minimization** | Only data necessary for evaluation functionality is collected |
+| **Data Minimization** | Only data necessary for evaluation functionality is collected; e-mail addresses, avatars and issue descriptions are not stored |
 | **Purpose Limitation** | Data is used solely for quality assurance evaluation purposes |
-| **Storage Limitation** | Defined retention periods enforced per data category |
-| **Integrity and Confidentiality** | Encryption at rest and in transit; input validation; access controls |
+| **Storage Limitation** | Data is kept for the life of the installation and removed on account closure (Personal Data Reporting), on administrator deletion, or on uninstall; see §4.3 |
+| **Integrity and Confidentiality** | Encryption at rest and in transit; input validation; server-side access controls |
 
 ### 4.3 Data Retention
 
-| Category | Period | Auto-Enforcement |
-|----------|--------|-----------------|
-| Evaluations | 365 days | Via GDPR service |
-| Audit Logs | 90 days | Via GDPR service |
-| User Preferences | 730 days | Via GDPR service |
-| Analytics Data | 180 days | Via GDPR service |
-| Temporary/Cache | 7 days (server) / auto-expiring (client) | Automatic |
+The App does not apply automatic time-based expiry to stored data. Data is retained until one of the following occurs:
+
+| Trigger | Effect |
+|---------|--------|
+| Administrator deletes a ticket's evaluations (requires "Delete Evaluations" permission) | Evaluations for that ticket are removed from site and project lists; the action is audited |
+| Atlassian reports an account as closed (weekly Personal Data Reporting, §4.5) | The account's evaluations are removed from the site-wide list; its display-name override and personal-data index entry are deleted; the erasure is audited |
+| Administrator removes a user's roles or a project | The relevant assignment / allow-list entry is removed |
+| Customer requests erasure through Nexus Frontier | Complete removal of a user's data from all storage locations by the Processor |
+| App uninstalled | All App data for the site is deleted by the Forge platform after the standard grace period (§11) |
+
+Server-side caches of user profile data refresh after 1 hour (user info) and 24 hours (project user lists). Client-side caches expire within 1 minute to 2 hours.
+
+A 90-day retention for backend audit entries is defined in the code base but not yet enforced automatically; audit entries currently persist until uninstall.
 
 ### 4.4 Data Subject Rights
 
-The App provides built-in tools for GDPR compliance:
+Data subject rights are supported through administrator tooling in the App and Processor assistance; there is no end-user self-service export/erase function:
 
-- **Data Export:** Compile all personal data for a specific user into a structured export
-- **Data Deletion:** Remove all personal data for a specific user across evaluations, audit logs, preferences, and role assignments
-- **Consent Management:** Record and manage user consent decisions with timestamps
+- **Access / Portability:** administrators export evaluation data (CSV/Excel) from the dashboards; role assignments and project access history are visible under Settings; complete compilations are provided by Nexus Frontier on request
+- **Erasure:** automatic on account closure (scope described in §4.3); administrator-initiated per ticket; complete per-user erasure performed by Nexus Frontier on request
+- **Rectification:** display names follow the Jira profile; scores are corrected by saving a superseding evaluation
+- **Restriction / Objection:** administrators remove the user's role assignments
+
+Details and timelines are in the [Privacy Policy](./Privacy-Policy.md) §8 and the [Data Processing Agreement](./Data-Processing-Agreement.md).
 
 ### 4.5 Personal Data Reporting API
 
@@ -175,23 +185,24 @@ All user-supplied input is validated and sanitized before processing:
 
 | Input Type | Validation |
 |------------|-----------|
-| JQL Queries | Pattern-based injection prevention (SQL comments, statement separators, union attacks, XSS, JavaScript protocol) |
-| Project Keys | Alphanumeric pattern enforcement, maximum length |
-| Account IDs | Format validation with length limits |
-| Feedback Text | HTML entity encoding, length limits |
-| Evaluation Scores | Integer range validation (0–10) |
-| Storage Keys | Alphanumeric pattern with allowed separators, length limits |
+| JQL Queries | Maximum length (5,000 characters) and rejection of statement separators, SQL/C-style comment markers, escaped backslashes and control characters; every search is additionally constrained to the administrator-approved project list |
+| Project Keys | Pattern enforcement (`^[A-Z][A-Z0-9_-]{1,9}$`) |
+| Issue Identifiers | Numeric id or `KEY-123` pattern |
+| Account IDs | Pattern enforcement with length limit (255) |
+| Pagination | Bounded `startAt` (≤ 100,000) and `maxResults` (≤ 100) |
+| Evaluation Scores | Integer range 0–10 enforced by the UI control |
+| Feedback Text | Rendered as text by React (no HTML interpretation); not stored in Jira |
+| Storage Keys | Pattern enforcement (`^[a-zA-Z0-9:_-]{1,200}$`) plus an explicit allow-list of keys reachable from the client |
 
 ### 5.2 Common Vulnerability Protections
 
 | Vulnerability | Mitigation |
 |---------------|-----------|
-| **Cross-Site Scripting (XSS)** | Output encoding, Content Security Policy (CSP) enforced by Forge, sandboxed iframe |
+| **Cross-Site Scripting (XSS)** | React output encoding, Content Security Policy (CSP) enforced by Forge, sandboxed iframe, no inline scripts or inlined assets in the build |
 | **Cross-Site Request Forgery (CSRF)** | Forge platform handles CSRF protection natively |
-| **Injection Attacks** | Input validation and parameterized Jira API calls |
+| **Injection Attacks** | Input validation; Jira calls built with Forge's `route` template tag; project keys validated and quoted before use in JQL |
+| **Broken Access Control** | Server-side permission checks in every resolver; storage-key allow-lists; removal of the former generic Jira proxy and debug functions |
 | **CSV Injection** | Dangerous character prefixing in exported values |
-| **Prototype Pollution** | Use of `Object.create(null)` for untrusted data structures |
-| **Regular Expression DoS** | Optimized regex patterns |
 | **Sensitive Data in Logs** | Forge runtime logs may include Atlassian Account IDs (opaque pseudonymous identifiers) for debugging and retry diagnostics. Display names, email addresses, evaluation content, comments, and other direct personal data are not logged. All logs are stored within Atlassian's hosted Forge logging infrastructure — not exported to any external service. |
 
 ### 5.3 Content Security Policy
@@ -214,17 +225,22 @@ Applied by the Forge platform:
 
 ## 6. Rate Limiting and Abuse Prevention
 
-### 6.1 Server-Side Rate Limiting
+### 6.1 Platform Controls
 
-- Per-user, per-endpoint rate limiting tracked in Forge Storage
-- Request counts reset on configurable time windows
-- Rate limit exceeded events are logged to the audit service
+- Atlassian enforces Forge function invocation quotas and Jira REST API rate limits for every installation.
+- Only authenticated Jira users of the Customer's site can invoke the App's functions.
 
 ### 6.2 Client-Side Controls
 
 - Concurrency limiter (default: 8 in-flight requests) reduces contention
 - In-flight request deduplication coalesces identical API calls
-- Exponential backoff with jitter on HTTP 429 responses
+- Up to three attempts with linear back-off on failed calls
+
+### 6.3 Application Controls
+
+- Jira searches are capped at 100 results per request and are always constrained to approved projects
+- Ticket metadata is fetched in batches of 50 identifiers
+- The App does not implement its own per-user request counter; abuse protection relies on the platform controls above together with server-side authorization, and denied access attempts are recorded in the audit log
 
 ---
 
@@ -234,17 +250,18 @@ Applied by the Forge platform:
 
 Administrative and security-relevant events are logged:
 
-| Event Category | Examples | Severity |
+| Event Category | Events recorded | Where visible |
 |---------------|----------|----------|
-| **Access Control** | Access granted, access denied | INFO / CRITICAL |
-| **Data Operations** | Evaluation created, data exported, data deleted | INFO / CRITICAL |
-| **Administrative** | Settings changed, project access changed, permission changed | INFO |
-| **Security** | Rate limit exceeded, invalid input, suspicious activity | WARNING / CRITICAL |
-| **GDPR** | Consent updated, user data deleted, retention enforced | INFO / CRITICAL |
+| **Access Control** | Access denied (storage key outside allow-list, evaluation write without permission, evaluation delete without permission, reading assignments/audit log without permission) | Backend audit log |
+| **Permission Changes** | Role created/updated/deleted, roles assigned (single/bulk), user access removed, evaluations deleted | Backend audit log **and** the Roles & Access audit list in Settings |
+| **Project Access** | Project added/removed from the approved list, with actor and timestamp | Project Access & Recent Changes in Settings |
+| **Personal Data** | User data erased following account closure | Backend audit log |
+
+Each backend audit entry records a timestamp, event type, severity, the actor's Account ID, the project key (where applicable) and event-specific details. Evaluation creation is not audited separately because every evaluation record already carries its evaluator and timestamp and is preserved in the ticket's history.
 
 ### 7.2 Audit Log Retention
 
-Audit logs are retained for 90 days. Security alerts are stored with elevated priority.
+Backend audit entries are currently retained for the life of the installation (a 90-day automatic retention is planned). The in-App "Recent Changes" list shows the 20 most recent project-access changes.
 
 ### 7.3 Forge Platform Logs
 
@@ -259,7 +276,7 @@ The Atlassian Forge platform independently provides:
 
 ### 8.1 Dependency Management
 
-- Dependencies are regularly audited using `npm audit`
+- Dependencies are audited with `npm audit --audit-level=high` before every release and monthly; a CycloneDX SBOM (`sbom.json`) is regenerated for each release
 - Security vulnerabilities are addressed per severity:
   - **Critical/High:** Patched within 14 days
   - **Medium:** Patched within 30 days
@@ -318,15 +335,17 @@ Quality Scorecard for Jira benefits from Atlassian's infrastructure certificatio
 
 | Requirement | Status |
 |-------------|--------|
-| GDPR Data Subject Rights | Implemented (export, delete, consent management) |
-| Data Minimization | Only necessary data collected |
-| Least Privilege Scopes | Minimum Jira API scopes requested |
+| GDPR Data Subject Rights | Supported via administrator export, automatic erasure on account closure, administrator deletion and Processor-assisted erasure (§4.4) |
+| Personal Data Reporting | Implemented (weekly, `report:personal-data` scope) |
+| Data Minimization | Only necessary data collected; no e-mail addresses stored |
+| Least Privilege Scopes | Read-only Jira scopes plus app storage and personal-data reporting; no write scope |
 | Encryption at Rest | AES-256 via Forge infrastructure |
 | Encryption in Transit | TLS 1.2+ |
 | No External Data Sharing | Zero third-party data transfers |
-| Audit Logging | Administrative and security events logged |
-| Input Validation | All user inputs validated and sanitized |
-| Secure Development Practices | Code review, dependency auditing, automated scanning |
+| Audit Logging | Access denials, permission changes, deletions and erasures logged |
+| Input Validation | Backend validation of all resolver inputs |
+| Secure Development Practices | Code review, dependency auditing, SBOM, Forge lint, Atlassian Ecoscanner |
+| Independent Assessment | No third-party penetration test or certification of the App itself has been performed to date; platform certifications apply to the hosting layer |
 
 ---
 
@@ -342,21 +361,28 @@ This section maps directly to the Atlassian Marketplace Privacy & Security tab q
 | Does the app share End-User Data with third-party entities? | **No.** |
 | Does the app support data residency? | Data residency is governed by Atlassian's Forge infrastructure. The App does not independently control data residency. |
 | Does the app store End-User Data after a customer uninstalls the app? | **Yes — but only via the Atlassian Forge platform's standard 28-day soft-delete grace period.** The App itself does not retain or extend this period and maintains no independent data store. After 28 days, all data is permanently deleted by Atlassian. Minimum retention: 0 days. Maximum retention: 28 days. Reference: [Atlassian Forge Data lifecycle for hosted storage](https://developer.atlassian.com/platform/forge/storage-reference/hosted-storage-data-lifecycle/). |
-| Does the app allow custom data retention periods? | The App enforces predefined retention periods (90 days to 730 days depending on data category). |
+| Does the app allow custom data retention periods? | **No.** The App does not apply time-based retention; data is retained for the life of the installation and removed on administrator deletion, account closure or uninstall (§4.3). |
 | Is the provider a "data controller" under GDPR? | **No.** Nexus Frontier acts as a Data Processor. The Customer is the Data Controller. |
 | Is the provider a "data processor" under GDPR? | **Yes.** With respect to all End-User Data processed through the App. |
 | Does the app have a DPA? | **Yes.** Available at [Data Processing Agreement](./Data-Processing-Agreement.md). |
 | Does the app transfer EEA data outside the EEA? | **No.** The App does not independently transfer data. Atlassian manages any cross-border transfers. |
 | Does the app use full disk encryption at-rest for End-User Data stored outside of Atlassian or the user's browser? | **No.** Quality Scorecard for Jira does not store any End-User Data outside of Atlassian. All persistent storage is in Atlassian Forge Key-Value Storage, which is encrypted at-rest by Atlassian using AES-256. The Marketplace question applies only to data stored outside Atlassian — which is not the case for this app. |
 | Does the app access PATs or shared secrets? | **No.** Authentication is handled natively by Forge. |
-| API scopes requested | `read:jira-work`, `write:jira-work`, `storage:app`, `read:jira-user`, `report:personal-data` |
-| Scope justification | Read issue and user data for evaluation context; store evaluation data; verify administrator privileges; report personal-data-bearing Account IDs to Atlassian's Personal Data Reporting API on a weekly schedule. |
+| API scopes requested | `read:jira-work`, `storage:app`, `read:jira-user`, `report:personal-data` |
+| Scope justification | Read issue and user data for evaluation context; store evaluation data; verify administrator privileges; report personal-data-bearing Account IDs to Atlassian's Personal Data Reporting API on a weekly schedule. No write scope is requested. |
 
 ---
 
 ## 12. Changes to This Statement
 
 We may update this Cloud Security Statement to reflect improvements in our security practices or changes in the Product. Updates will be reflected in the "Last Updated" date and version number.
+
+| Version | Date | Summary |
+|---------|------|---------|
+| 1.4 | October 25, 2026 | Aligned with the shipped App: removed `write:jira-work`; replaced the server-side rate-limiting and automatic retention claims with the actual platform/client controls and retention triggers; corrected the admin-verification mechanism, audit event list and data-subject-rights description; added the independent-assessment status. |
+| 1.3 | May 28, 2026 | Rebrand to Quality Scorecard for Jira. |
+| 1.2 | May 21, 2026 | Added Personal Data Reporting (§4.5). |
+| 1.0 | March 7, 2026 | Initial version. |
 
 ---
 
@@ -373,4 +399,4 @@ For security questions, vulnerability reports, or compliance inquiries:
 
 ---
 
-*Document Version: 1.2 | Effective: March 7, 2026 | Last Updated: May 21, 2026*
+*Document Version: 1.4 | Effective: March 7, 2026 | Last Updated: October 25, 2026*

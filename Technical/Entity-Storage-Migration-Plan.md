@@ -1,8 +1,10 @@
 # Forge Entity Storage Migration Plan
 
-**Status:** Planned
+**Status:** Planned — not yet implemented (verified against app version 1.3.0, October 2026: evaluations are still stored as JSON arrays under `ticket-evaluations` and `project-evaluations-<KEY>`)
 **Priority:** High — required before enterprise adoption
 **Estimated Effort:** 3–5 days
+
+> Dependencies to keep in sync when this is implemented: the generic storage allow-lists in `src/index.js`, `getFilteredEvaluations`, `deleteTicketEvaluations`, `gdprService.deleteUserData`, and the discovery scan in `personalDataIndex.js` all assume the array layout.
 
 ---
 

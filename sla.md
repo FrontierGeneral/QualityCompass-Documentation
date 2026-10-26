@@ -17,7 +17,7 @@ Nexus Frontier is committed to providing reliable, responsive support for all ap
 
 ## Support Channels
 
-- **Primary:** [support@nexusfrontier.net](mailto:support@nexusfrontier.net)
+- **Primary:** support@nexusfrontier.net
 - **Marketplace:** Via the Atlassian Marketplace support tab on each app listing
 - **Documentation:** Available at each app's documentation portal
 
@@ -55,7 +55,7 @@ Resolution targets are goals, not guarantees. Complex issues may require longer 
 If you are not satisfied with the support response or timeline:
 
 1. **First escalation:** Reply to your existing support thread requesting escalation and stating the business impact.
-2. **Second escalation:** Email [support@nexusfrontier.net](mailto:support@nexusfrontier.net) with subject line "ESCALATION: [Your Issue Summary]" and include your original ticket reference.
+2. **Second escalation:** Email support@nexusfrontier.net with subject line "ESCALATION: [Your Issue Summary]" and include your original ticket reference.
 3. **Atlassian Marketplace:** You may also raise concerns through the Atlassian Marketplace support channel for the relevant app.
 
 ## Scope

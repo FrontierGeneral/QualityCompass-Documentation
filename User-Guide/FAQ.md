@@ -1,271 +1,170 @@
- # Frequently Asked Questions (FAQ)
+# Frequently Asked Questions (FAQ)
 
-## General Questions
+## General
 
-### What is the Quality Scorecard for Jira?
-The Quality Scorecard for Jira is a quality assurance evaluation system integrated directly into Jira. It allows teams to systematically evaluate ticket quality, track performance metrics, and generate comprehensive analytics reports.
+### What is Quality Scorecard for Jira?
+An Atlassian Forge app for Jira Cloud that lets teams score the quality of tickets against configurable criteria from the issue view and analyse the results in project dashboards (analytics, agent performance, evaluator analytics, advanced analytics).
 
-### Who can use the Quality Scorecard for Jira?
-Anyone with access to your Jira project can view analytics (with appropriate permissions). Creating evaluations typically requires "Edit Issues" permission, while administrative functions require project admin rights.
+### Who can use it?
+Anyone with a Jira account on the site, **once a Jira administrator has enabled their project and given them a role** in Settings → Roles & Access. Without a role you can neither open the dashboard nor save evaluations. Jira administrators have full access automatically.
 
-### Is training required to use the app?
-Basic usage requires no formal training - the interface is intuitive and includes helpful tooltips. However, we recommend reviewing this documentation for best practices and advanced features.
+### Does it work on Jira Data Center / Server?
+No. It is a Forge app and runs only on Jira Cloud.
+
+### Does the app change my Jira issues?
+No. The app only reads issues (`read:jira-work`) and stores evaluations in its own Forge storage. It does not request write access to Jira.
 
 ---
 
-## Evaluation Questions
+## Evaluations
 
 ### How do I create an evaluation?
-1. Navigate to any Jira ticket
-2. Click the "Evaluate" button
-3. Score each criterion (0-10)
-4. Add feedback
-5. Submit the evaluation
+Open the issue → **Quality Scorecard for Jira** panel → move the sliders (0–10) → optional **Feedback** → **Save Evaluation**.
 
-### Can I edit an evaluation after submitting?
-Yes. Evaluations can be edited at any time, provided the ticket is still open and you have the necessary permissions.
+### Can I edit an evaluation after saving?
+Not in place. Open the ticket again; the sliders are pre-filled with the latest values. Change them and **Save Evaluation** — a new evaluation is stored and dashboards use the most recent one. The earlier evaluation stays in **View History**.
 
-### What happens if I make a mistake in scoring?
-You can edit the evaluation later. If the ticket is already closed or you lack permissions, contact an administrator for assistance.
+### Can evaluations be deleted?
+Yes, by users with the **Delete Evaluations** permission: Evaluator Analytics → open the evaluator's detail sheet → **Evaluated Tickets** → **Delete Evaluation**. This removes *all* evaluations of that ticket (not a single one) and is recorded in the Settings audit list.
 
-### Why can't I see the Evaluate button?
-Possible reasons:
-- You don't have "Edit Issues" permission
-- The app isn't installed for this project
+### Is feedback mandatory?
+No. Feedback is optional for every score.
 
-### How many evaluations can one ticket have?
-Tickets can have multiple evaluations; analytics use the most recent per ticket for charts. Raw tables may show full history where applicable.
+### Why do I get "Not allowed – You do not have permission to evaluate this ticket"?
+Either the ticket's project is not enabled for the app, or you have no role with **Evaluate Tickets** in that project. Ask your Jira administrator.
 
----
+### How many evaluations can a ticket have?
+Unlimited. Dashboards use the latest; **View History** shows the 10 most recent (older ones remain stored and appear in the dashboards' detail sheets and exports).
 
-## Scoring Questions
-
-### What does each score mean?
-- **0-4.9**: Poor performance, significant issues
-- **5-7.9**: Average performance, room for improvement
-- **8-10**: Good performance, minor issues only
-
-### Should I use the full scale (0-10)?
-Yes! Using the full scale provides better differentiation and more actionable data. Avoid clustering all scores around 7-8.
-
-### How do I ensure consistent scoring?
-- Use the scoring guide for each criterion
-- Attend calibration sessions with your team
-- Review the evaluator analytics for your scoring patterns
-- Compare your scores with team averages
-
-### What if I disagree with another evaluator's score?
-Discuss it in your team's calibration meeting. The app tracks evaluator patterns to identify and address inconsistencies.
+### Can I evaluate tickets in projects not shown on the landing page?
+No. Only projects an administrator has added under Settings → Project Access can be evaluated or analysed.
 
 ---
 
-## Analytics Questions
+## Scoring
 
-### How often is analytics data updated?
-- Real-time for new evaluations
-- Cached results are shown instantly on revisit; background refresh updates automatically
-- Manual refresh available via the Refresh/Apply Filters button
+### What do the scores mean?
+Each criterion is scored 0–10. Dashboards group averages into **Poor (< 5)**, **Average (5–7.9)** and **Good (≥ 8)**.
 
-### What does the trend percentage mean?
-The trend shows the change in average score:
-- Positive percentage = improving quality
-- Negative percentage = declining quality
-- Based on recent vs. historical performance
+### How is the average score calculated?
+The plain mean of all criteria scores in the evaluation. Criteria have no weights.
 
-### Why don't I see any data in analytics?
-- Check your date range filter
-- Ensure evaluations exist for the selected period
-- Verify you have permission to view analytics
-- Try refreshing the page
+### What criteria are used?
+Whatever your administrator configured in the **Metrics** tab. Out of the box there are eight: Clarity of Description, Completeness of Requirements, Reproducibility (for bugs), Technical Documentation, Test Coverage, Code Quality, Solution Efficiency, Adherence to Standards.
 
-### How is the "Most Improved" agent determined?
-Based on the highest positive trend percentage over the selected time period, with a minimum number of evaluations for statistical significance.
-
-### Can I export analytics data?
-Yes! Click the Export button and choose either CSV or Excel format. You can export filtered or complete datasets.
+### Are criteria per project?
+No, the criteria list is shared by all enabled projects on the site.
 
 ---
 
-## Performance Questions
+## Analytics
 
-### How is agent performance calculated?
-Agent performance is based on:
-- Average evaluation score
-- Number of evaluations
-- Trend over time
-- Individual criteria scores
+### How current are the dashboards?
+New evaluations are available as soon as you **Apply Filters**/reload. For speed, results are cached in your browser (up to 30 minutes for most tabs, up to 2 hours for Advanced Analytics, which also shows the last result instantly and refreshes in the background). Use **Refresh** on Advanced Analytics to force a recompute.
 
-### What does "bias" mean in evaluator analytics?
-Bias indicates if an evaluator consistently scores higher (lenient) or lower (strict) than the team average by 2.5+ points.
+### Why is a chart empty although we saved evaluations?
+Most charts group by the ticket's **creation date** in Jira (Advanced Analytics coverage uses the **resolution date**), not by the time of the evaluation. Widen the date range and apply the filter again.
 
-### How can I improve my performance score?
-- Review feedback from evaluations
-- Focus on your weakest criteria
-- Ask evaluators for specific improvement suggestions
-- Track your progress over time
+### What does "improving / stable / declining" mean?
+A trend is *improving* when the recent average is more than 0.5 points above the earlier average, *declining* when more than 0.5 below, otherwise *stable*. Advanced Analytics shows this for short, medium and long term.
 
-### Why is my trend showing as declining when I'm improving?
-Trends are calculated based on recent performance vs. historical baseline. Short-term fluctuations are normal. Focus on long-term trends.
+### What does "biased" mean in Evaluator Analytics?
+An evaluator whose average differs from the team average by more than **2.5 points** is flagged *Lenient* (higher) or *Strict* (lower).
 
----
+### What is coverage?
+The share of resolved tickets in the period that have at least one evaluation, compared with the target set by your administrator (default 75 % overall; by priority Highest 100, High 100, Medium 50, Low 30, Lowest 20).
 
-## Technical Questions
+### Is there a trend or "active evaluators" number on the Analytics Dashboard?
+No. The Analytics Dashboard shows Average Score, Total Evaluations, Evaluations by Day, Average Score by Created Day, Score Distribution, Criteria Averages, Priority Performance, Issue Type Performance and the raw data table. Trends are in Advanced Analytics; evaluator counts are in Evaluator Analytics.
 
-### Is my data secure?
-Yes, all data is:
-- Encrypted at rest and in transit
-- Stored in Atlassian's secure Forge platform
-- Access-controlled based on Jira permissions
-- Regularly backed up
+### Can I filter the Analytics Dashboard by evaluator?
+No. Use Evaluator Analytics (per evaluator) or export the raw data and filter in a spreadsheet.
 
-### Can I integrate this with other tools?
-The app provides data export capabilities. Additional API endpoints and integrations are planned for future releases.
-
-### What browsers are supported?
-Modern versions of:
-- Chrome (recommended)
-- Firefox
-- Safari
-- Edge
-
-### Does the app work on mobile devices?
-Yes, the app is fully responsive and works on tablets and smartphones with optimized mobile views.
-
-### What happens to the data if we uninstall the app?
-Data remains in Forge storage until manually deleted or purged. Export before uninstall. Contact admin/support for immediate deletion if required.
+### Can I export?
+Yes — **Export** on every dashboard, as **CSV** or **Excel (.xlsx)**. Exports contain the data currently filtered. PDF and JSON are not available.
 
 ---
 
-## Troubleshooting Questions
+## Administration
 
-### Why is the app running slowly?
-- First load of complex tabs (Evaluator/Advanced) can take longer. Re-opens should be much faster due to caching.
-- Reduce the date range for large datasets
-- Click Refresh to fetch latest; otherwise the app may show cached data first and update in the background
-- Check your internet connection / try a different browser
-- Contact support if issues persist
+### How do I give someone access?
+Open the project dashboard → **Settings → Roles & Access** → **Create Role** (choose permissions) → **Add Users** → assign the role. Roles are per project.
 
-### I'm getting an error message. What should I do?
-1. Note the exact error message
-2. Try refreshing the page
-3. Clear browser cache and cookies
-4. Check if others are experiencing the same issue
-5. Contact support with error details
-
-### Why can't I export data?
-- Check if pop-ups are blocked
-- Try a different export format
-- Ensure the dataset isn't too large
-
-### The charts aren't displaying correctly.
-- Refresh the page
-- Check browser compatibility
-- Disable browser extensions temporarily
-- Update your browser to the latest version
-
-### I can't find a specific evaluation.
-- Check your filters
-- Expand the date range
-- Search by ticket ID
-- Verify the evaluation was submitted successfully
-
----
-
-## Administrative Questions
-
-### How do I add custom evaluation criteria?
-Evaluation criteria are currently pre-configured and cannot be modified through the UI. Contact your development team if you need to change the criteria.
+### How do I change the evaluation criteria?
+**Metrics** tab → edit, add, reorder or remove → **Save Changes**. Only Jira administrators can save changes.
 
 ### Can I restrict who can create evaluations?
-Yes, through Jira's permission schemes. Users need "Edit Issues" permission to create evaluations.
+Yes: only users whose role includes **Evaluate Tickets** can save evaluations. This is independent of Jira's own permission scheme (though users still need Jira access to the issue).
 
-### How do I manage evaluator access?
-Evaluator access is controlled through Jira project permissions. Administrators can manage project access and roles under Settings.
+### Where can I see who changed settings?
+- Project list changes: **Settings → Project Access & Recent Changes**.
+- Role changes, user additions/removals and evaluation deletions: the audit list at the bottom of **Settings → Roles & Access** (requires the Settings permission).
 
-### Can I delete evaluations?
-No, evaluations cannot be deleted once created. This ensures data integrity and maintains a complete evaluation history.
+### Do Jira project administrators get access automatically?
+No. Only users with Jira's global **Administer Jira** permission (site admins) are treated as app administrators. Project admins need a role like everyone else.
 
-### How do I handle GDPR requests?
-GDPR compliance features are partially implemented:
-- Data export is available through the analytics export functionality
-- For data deletion requests, contact your development team
-- Note: The GDPR service code exists but requires manual intervention
+### How do I handle GDPR / personal-data requests?
+- The app stores evaluator account ids, display names, scores and feedback. It never stores e-mail addresses.
+- When an Atlassian account is **closed**, the app learns this through Atlassian's Personal Data Reporting (weekly) and automatically removes that account's evaluations from the global list and its cached name.
+- For an **access or erasure request** about a specific user, export the relevant data (Export → CSV) and contact support@nexusfrontier.net for a complete erasure; there is no self-service erasure button in the UI.
+- Uninstalling the app deletes all app data for the site.
+See the [Privacy Policy](../Legal/Privacy-Policy.md) and [Technical → Security](../Technical/Security.md).
 
----
+### What happens to the data if we uninstall the app?
+Forge deletes the app's storage for your site on uninstall. Export anything you need first.
 
-## Best Practices Questions
-
-### How often should we evaluate tickets?
-Best practice is to evaluate tickets as soon as they're resolved, while context is fresh. Avoid batch evaluations.
-
-### Should every ticket be evaluated?
-Ideally yes, but at minimum:
-- All customer-reported issues
-- High-priority tickets
-- Complex technical tasks
-- A random sample of routine tickets
-
-### How do we prevent gaming the system?
-- Regular calibration sessions
-- Monitor evaluator analytics for bias
-- Rotate evaluators
-- Track evaluation history
-- Focus on trends, not individual scores
-
-### What's the best way to provide feedback?
-- Be specific and actionable
-- Balance positive and constructive feedback
-- Reference specific examples
-- Suggest improvements
-- Keep it professional
-
-### How often should we review analytics?
-- Team leads: Weekly
-- Individuals: Bi-weekly
-- Quarterly deep-dives for trends
+### Is there a storage limit?
+Evaluations are stored as lists in Forge storage, which caps the size of each list. Very active sites (several hundred evaluations in one project) may eventually see save errors; contact support if this happens. See [Entity Storage Migration Plan](../Technical/Entity-Storage-Migration-Plan.md) for the planned change.
 
 ---
 
-## Getting Help
+## Technical
 
-### Where can I find more documentation?
-- [Getting Started Guide](./Getting-Started.md)
-- [Feature Guide](./Feature-Guide.md)
-- [Workflows Guide](./Workflows.md)
-- [Technical Documentation](../Technical/README.md)
+### Is my data secure?
+Data is stored in Atlassian's Forge storage (encrypted at rest, HTTPS in transit, isolated per site). The app enforces its permissions on the server, logs denied access attempts, and never sends data outside Atlassian. See [Technical → Security](../Technical/Security.md).
 
-### How do I report a bug?
-Raise a ticket in the Service Desk Jira project with:
-- Description of the issue
-- Steps to reproduce
-- Screenshots if applicable
-- Browser and version
-- Time and date of occurrence
+### Can I integrate with other tools?
+Via exports (CSV/Excel). There is no public API or webhook.
 
-### Where can I suggest new features?
-Submit feature requests to:
-- Email: support@nexusfrontier.net
-- Include use case and expected benefits
+### Which browsers are supported?
+Current versions of Chrome, Edge, Firefox and Safari.
 
-### Is there a user community?
-Not yet, but there will be in the future.
+### Does it work on mobile?
+The UI is responsive but designed for the desktop Jira experience; the Jira mobile apps do not show Forge Custom UI panels.
 
-### How do I get admin access?
-Contact your Jira administrator or project lead. Admin access is granted based on role and responsibilities.
+### Are there keyboard shortcuts or an in-app Help menu?
+No.
 
 ---
 
-## Quick Troubleshooting Checklist
+## Troubleshooting
 
-If something isn't working, try these steps in order:
+### The app is slow
+- First load of Evaluator Analytics or Advanced Analytics on a large project can take a while; later loads come from cache.
+- Narrow the date range.
+- The app fetches Jira data in batches of 50 tickets with at most 8 parallel requests; thousands of tickets take proportionally longer.
 
-1. ✅ Refresh the page
-2. ✅ Clear browser cache
-3. ✅ Check your permissions
-4. ✅ Verify filters aren't hiding data
-5. ✅ Try a different browser
-6. ✅ Check if others have the same issue
-7. ✅ Contact support if unresolved
+### I see an account id instead of a name
+The name could not be resolved from Jira (deactivated account, or the `read:jira-user` scope was not approved after an upgrade). Ask your administrator to check **Manage apps** for a pending scope approval.
+
+### Export does nothing
+Check your browser's download/pop-up blocker and make sure the filtered table has rows.
+
+### I cannot find an evaluation
+Widen the date range (charts use ticket creation date), confirm you are in the right project, and check **View History** on the ticket itself.
+
+### Something else is wrong
+1. Reload the page.
+2. Check your permissions with your administrator.
+3. Note the exact error text and time, then contact **support@nexusfrontier.net** — see the [Support SLA](../Legal/Support-SLA.md) for response targets.
+
+---
+
+## More help
+
+- [Getting Started](./Getting-Started.md) · [Feature Guide](./Feature-Guide.md) · [Workflows](./Workflows.md)
+- [Technical documentation](../README.md#technical-documentation)
+- Feature requests and bug reports: support@nexusfrontier.net
 
 ---
 

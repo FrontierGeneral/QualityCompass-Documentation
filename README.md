@@ -13,6 +13,7 @@ Comprehensive documentation for Quality Scorecard for Jira — a quality assuran
 - [Development Guide](./Technical/Development.md) - Development setup and procedures
 - [Security Documentation](./Technical/Security.md) - Security implementation details
 - [Technical Troubleshooting](./Technical/Troubleshooting-Technical.md) - Technical issue resolution
+- [Entity Storage Migration Plan](./Technical/Entity-Storage-Migration-Plan.md) - Planned (not yet implemented) move from Key-Value to Custom Entity storage
 
 #### User Documentation
 - [Getting Started](./User-Guide/Getting-Started.md) - Quick start guide for new users
@@ -26,6 +27,11 @@ Comprehensive documentation for Quality Scorecard for Jira — a quality assuran
 - [Data Processing Agreement](./Legal/Data-Processing-Agreement.md) - GDPR-compliant DPA
 - [Cloud Security Statement](./Legal/Cloud-Security-Statement.md) - Security practices and controls
 - [Support SLA](./Legal/Support-SLA.md) - Support commitments and response times
+
+The published versions of the legal documents (GitHub Pages: `privacy.md`, `terms.md`, `dpa.md`, `cloud-security.md`, `sla.md` in the repository root) are generated from the `Legal/` sources and must be kept identical to them.
+
+#### Maintenance
+- [Documentation Audit Report](./DOCUMENTATION-AUDIT-REPORT.md) - October 2026 verification of every document against the application code, with the list of discrepancies found and corrected
 
 ### About This Documentation
 
@@ -43,10 +49,11 @@ This documentation is organized into three sections:
 
 ### Version Information
 
-- **App Version**: 1.0.0
-- **Documentation Version**: 1.1.0
-- **Last Updated**: March 2026
-- **Forge Platform Version**: Latest
+- **App Version**: 1.3.0 (`package.json`); production Forge deployment 7.x
+- **Documentation Version**: 2.0.0
+- **Last Updated**: October 2026
+- **Forge Runtime**: `nodejs22.x`
+- **Legal document versions**: Privacy Policy 1.4 · Terms of Service 1.2 · Data Processing Agreement 1.3 · Cloud Security Statement 1.4 · Support SLA (March 15, 2026)
 
 ### Support
 

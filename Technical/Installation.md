@@ -2,388 +2,145 @@
 
 ## Quick Links
 - [Architecture Overview](./Architecture.md) - Understand the system before installation
-- [API Reference](./API-Reference.md) - API documentation for integration
-- [Development Guide](./Development.md) - For development setup
-- [Security Documentation](./Security.md) - Security considerations
+- [API Reference](./API-Reference.md) - Resolver documentation
+- [Development Guide](./Development.md) - Developer setup (deploying your own build)
+- [Security Documentation](./Security.md) - Scopes, authorization and data handling
 - [Technical Troubleshooting](./Troubleshooting-Technical.md) - Installation issues
 
 ## Prerequisites
 
-Before installing the Quality Scorecard for Jira, ensure you have the following:
+### For customers (Marketplace install)
+- An active **Jira Cloud** site (the app is not available for Jira Data Center/Server).
+- **Jira administrator** (site admin) rights to install apps and to perform first-run configuration.
+- A modern browser (Chrome, Edge, Firefox, Safari).
 
-### System Requirements
-- **Jira Cloud**: Active Jira Cloud instance
-- **Permissions**: Jira administrator access
-- **Browser**: Modern web browser (Chrome, Firefox, Safari, Edge)
-- **Forge CLI**: Version 6.x or higher (for development)
+### For developers (self-deployment of a build)
+- Node.js **22.x** (matches the Forge runtime `nodejs22.x`) and npm 10+.
+- Forge CLI (`npm install -g @forge/cli`) and an Atlassian developer account.
+- Access to the app source repository.
 
-### Required Jira Permissions
-The installing user must have:
-- Jira Administrator permissions
-- Ability to install Forge apps
-- Project administration rights for target projects
+## Part A – Install from the Atlassian Marketplace
 
-## Installation Steps
+1. In Jira, open **Apps → Explore more apps**.
+2. Search for **Quality Scorecard for Jira** and click **Get app** (or **Try it free**).
+3. Accept the requested scopes. The app asks for:
+   - `read:jira-work` – read issues and projects
+   - `read:jira-user` – resolve account ids to display names
+   - `storage:app` – store evaluations and configuration in Forge storage
+   - `report:personal-data` – Personal Data Reporting (GDPR) to Atlassian
+   It does **not** request write access to Jira issues.
+4. After installation the app appears in **Apps → Manage apps** and in the **Apps** menu as **Quality Scorecard for Jira**.
 
-### Step 1: Install via Forge CLI (recommended for current build)
+Licensing is enabled: the app follows the Marketplace trial/subscription state of your site.
 
-1. **Register and Deploy**
-   ```bash
-   forge register
-   npm run build
-   forge deploy --environment development
-   ```
+## Part B – First-run configuration (Jira administrator)
 
-2. **Install into your Jira site**
-   ```bash
-   forge install --environment development --site <your-site>.atlassian.net --product jira
-   ```
+### Step 1: Allow projects
+The app only works with projects an administrator has explicitly allowed.
 
-3. **Verify Installation**
-   - Open your Jira project → Apps → Quality Scorecard for Jira
-   - Ensure dashboards/tabs load
+1. Open **Apps → Quality Scorecard for Jira**.
+2. As an admin with no projects configured you will see **"No projects are configured yet"** → click **Configure Projects** (the same panel is available later as **Settings** on the project landing page, and under **Settings → Project Access & Recent Changes** inside a project dashboard).
+3. Search projects by name or key and add them to the allowed list. Each change is recorded in **Recent Changes** with who made it and when.
 
-### Step 2: Initial Configuration
+Until at least one project is allowed, non-admin users see "Ask your administrator to add your projects…" and no Jira searches are performed.
 
-#### Configure Allowed Projects
+### Step 2: Review evaluation criteria
+1. Open a project from the landing page, then the **Metrics** tab.
+2. The app seeds eight default criteria on first use:
 
-1. **Access App Settings**
-   ```
-   Navigate to: Project Settings → Apps → Quality Scorecard for Jira
-   ```
+| Id | Name | Required | Default |
+|----|------|----------|---------|
+| `clarity` | Clarity of Description | yes | 5 |
+| `completeness` | Completeness of Requirements | yes | 5 |
+| `reproducibility` | Reproducibility (for bugs) | no | 5 |
+| `documentation` | Technical Documentation | yes | 5 |
+| `testCoverage` | Test Coverage | yes | 5 |
+| `codeQuality` | Code Quality | yes | 5 |
+| `efficiency` | Solution Efficiency | yes | 5 |
+| `adherence` | Adherence to Standards | yes | 5 |
 
-2. **Set Allowed Projects**
-   ```javascript
-   // The app will automatically detect and use the current project
-   // Additional projects can be configured via the admin interface
-   ```
+3. Add, edit, reorder or remove criteria and click **Save Changes**. Only administrators can change criteria once they exist. Criteria are global (shared by all allowed projects) and every criterion weighs equally in the average score.
 
-3. **Configure Evaluation Criteria**
-   - Access the Admin View
-   - Navigate to Settings → Evaluation Criteria
-   - Define your evaluation criteria (default criteria are pre-configured)
+### Step 3: Grant access
+Non-administrators have **no access** until they are given a role.
 
-#### Default Evaluation Criteria
-```json
-{
-  "accuracy": {
-    "name": "Accuracy",
-    "description": "Correctness of the solution",
-    "weight": 1.0,
-    "enabled": true
-  },
-  "completeness": {
-    "name": "Completeness", 
-    "description": "All requirements addressed",
-    "weight": 1.0,
-    "enabled": true
-  },
-  "communication": {
-    "name": "Communication",
-    "description": "Clarity of communication",
-    "weight": 1.0,
-    "enabled": true
-  }
-}
-```
+1. Inside the project dashboard open **Settings → Roles & Access**.
+2. **Create Role** – name it (e.g. "QA Analyst") and tick the permissions it grants:
+   - Dashboard Access, Analytics Dashboard, Agent Performance, Evaluator Analytics, Advanced Analytics, Metrics, Settings, Evaluate Tickets, Delete Evaluations.
+3. **Add User** – search for users in the project and assign one or more roles.
+4. Changes appear in the audit list at the bottom of the card.
 
-### Step 3: Permission Setup
+Typical roles:
 
-#### Configure User Roles
+| Role | Permissions |
+|------|-------------|
+| Evaluator | Evaluate Tickets |
+| QA Lead | Dashboard Access + all analytics tabs + Evaluate Tickets |
+| QA Manager | QA Lead + Delete Evaluations + Metrics + Settings |
 
-1. **Evaluators**
-   - Must have "Browse Projects" permission
-   - Require "Edit Issues" permission for evaluation
-   
-2. **Viewers**
-   - Need "Browse Projects" permission
-   - Can view analytics without edit rights
+Jira administrators automatically hold every permission in every allowed project. Roles and assignments are per project.
 
-3. **Administrators**
-   - Require "Administer Projects" permission
-   - Full access to all features
+### Step 4: Coverage targets (optional)
+**Settings → Coverage Targets** lets administrators set the overall coverage target (default 75 %) and per-priority targets (Highest 100, High 100, Medium 50, Low 30, Lowest 20). These drive the Coverage analysis in the Advanced Analytics tab.
 
-#### Setting Permissions via Jira
-```
-Project Settings → Permissions → Permission Schemes
-- Browse Projects: All users
-- Edit Issues: Evaluators and above
-- Administer Projects: Administrators only
-```
+### Step 5: Verify
+- Open any issue in an allowed project; the **Quality Scorecard for Jira** panel should show the criteria sliders.
+- Save a test evaluation; it should appear under **View History** and, after refresh, in the Analytics Dashboard.
+- Export a CSV or Excel file from a dashboard.
+- Log in as a user without a role and confirm the dashboard is not accessible; assign a role and confirm it becomes available.
 
-For detailed permission model, see [Security Documentation](./Security.md#authentication--authorization).
+## Part C – Deploying a build yourself (developers)
 
-### Step 4: Environment Configuration
-
-#### Storage Configuration
-The app automatically configures storage with these defaults:
-
-```javascript
-// Automatic storage configuration
-{
-  "storage": {
-    "type": "forge",
-    "encryption": "at-rest",
-    "retention": "unlimited",
-    "backup": "automatic"
-  }
-}
-```
-
-#### API Rate Limits
-The app uses a client-side concurrency limiter (default 8) and in-flight request deduplication to smooth bursts. Platform limits still apply.
-
-### Step 5: Verification
-
-#### Verify Installation Success
-
-1. **Check App Access**
-   ```
-   Navigate to any project → Apps → Quality Scorecard for Jira
-   The dashboard should load without errors
-   ```
-
-2. **Test Basic Functionality**
-   - Create a test evaluation
-   - View analytics dashboard
-   - Export sample data
-
-3. **Verify Permissions**
-   - Test with different user roles
-   - Confirm appropriate access levels
-
-#### Health Check Commands
-For developers with Forge CLI:
 ```bash
-# Check app status
-forge list
+# 1. Install dependencies and build the Custom UI
+npm ci
+npm run build          # → dist/
 
-# View app logs
-forge logs
+# 2. Authenticate and register your own copy of the app (first time only)
+forge login
+forge register         # creates a new app id in manifest.yml
 
-# Check deployment
-forge install list
+# 3. Deploy and install
+forge deploy -e development
+forge install -e development --site <your-site>.atlassian.net --product jira
+
+# 4. Later deployments
+forge deploy -e development
+forge install --upgrade -e development   # required when scopes or modules change
 ```
 
-## Advanced Configuration
-
-### Custom Domain Configuration
-If using a custom domain:
-
-```yaml
-# manifest.yml adjustment
-app:
-  runtime:
-    name: nodejs18.x
-  
-permissions:
-  external:
-    fetch:
-      backend:
-        - 'https://your-domain.com'
-```
-
-### Proxy Configuration
-For environments requiring proxy:
-
-```javascript
-// Set in environment variables
-HTTPS_PROXY=http://proxy.company.com:8080
-HTTP_PROXY=http://proxy.company.com:8080
-```
-
-### Performance Tuning
-
-#### Cache Configuration
-```javascript
-// Adjust cache TTL values in cacheService.ts
-export const CACHE_TTL = {
-  SHORT: 5 * 60 * 1000,    // 5 minutes
-  MEDIUM: 15 * 60 * 1000,  // 15 minutes
-  LONG: 30 * 60 * 1000,    // 30 minutes
-  EXTRA_LONG: 60 * 60 * 1000 // 1 hour
-};
-```
-
-#### Batch Processing Limits
-```javascript
-// Adjust in src/index.js
-const BATCH_SIZE = 50; // Number of items per batch
-const MAX_CONCURRENT = 5; // Concurrent API calls
-```
-
-## Troubleshooting Installation
-
-### Common Issues and Solutions
-
-#### Issue: App Not Appearing in Project
-**Solution:**
-1. Verify installation completed successfully
-2. Check project permissions
-3. Refresh browser cache
-4. Re-install if necessary
-
-#### Issue: Permission Denied Errors
-**Solution:**
-```bash
-# Verify permissions in manifest.yml
-permissions:
-  scopes:
-    - read:jira-work
-    - write:jira-work
-    - storage:app
-    - read:user:jira
-```
-
-For more troubleshooting steps, see [Technical Troubleshooting](./Troubleshooting-Technical.md#installation-issues).
-
-#### Issue: Storage Errors
-**Solution:**
-1. Check Forge storage quota
-2. Verify storage permissions
-3. Clear corrupted data:
-```javascript
-// Emergency storage reset (use with caution)
-await storage.delete('evaluations');
-await storage.set('evaluations', []);
-```
-
-#### Issue: Performance Problems
-**Solution:**
-1. Check network connectivity
-2. Verify Jira instance performance
-3. Adjust cache settings
-4. Reduce batch sizes
-
-### Installation Validation Checklist
-
-- [ ] App appears in Manage Apps
-- [ ] Can access from project navigation
-- [ ] Admin dashboard loads correctly
-- [ ] Can create evaluations
-- [ ] Analytics display properly
-- [ ] Export functionality works
-- [ ] All user roles can access appropriately
-- [ ] No console errors in browser
-- [ ] API calls succeed
-- [ ] Storage operations work
+Notes:
+- `npm run build` runs `vite build`; the resolver (`src/index.js`) and the scheduled function (`src/personalDataReporting.js`) are deployed as-is by `forge deploy`.
+- `forge tunnel` can proxy the development environment to your local build for faster iteration (see [Development Guide](./Development.md)).
+- There is no `.env` file or environment variables to configure; all configuration lives in `manifest.yml` and in Forge storage.
+- Do not deploy to `production` of the published app while a Marketplace review is in progress.
 
 ## Uninstallation
 
-### To Remove the App
+1. **Apps → Manage apps → Quality Scorecard for Jira → Uninstall**.
+2. Forge deletes the app's storage for the site when the app is uninstalled. Export anything you want to keep first (each dashboard has **Export** with CSV/Excel).
+3. Browser-side caches (IndexedDB `qc-persisted-cache`) are harmless and expire on their own.
 
-1. **Navigate to Manage Apps**
-   ```
-   Apps → Manage apps → Quality Scorecard for Jira
-   ```
+## Upgrades
 
-2. **Uninstall**
-   - Click the app name
-   - Select "Uninstall"
-   - Confirm removal
+Marketplace upgrades are applied by Atlassian automatically for minor versions. If a new version requests additional scopes, a Jira administrator must approve the upgrade in **Manage apps**. Evaluation data is stored in a forward-compatible JSON shape; no manual migration has been required between released versions.
 
-3. **Data Cleanup**
-   - Evaluation data remains in Forge storage after uninstall
-   - Export all data before uninstalling
-   - Contact Atlassian support if data removal is required
+## Installation Validation Checklist
 
-### Data Export Before Uninstall
-```javascript
-// Export all data before removal
-1. Go to Analytics Dashboard
-2. Select "Export All Data"
-3. Choose Excel format
-4. Save the file securely
-```
+- [ ] App listed in Manage apps and enabled
+- [ ] At least one project allowed
+- [ ] Criteria reviewed in Metrics
+- [ ] Roles created and users assigned
+- [ ] Issue panel visible on an allowed project's issues
+- [ ] Test evaluation saved and visible in Analytics
+- [ ] Export works
+- [ ] Users without roles cannot access the dashboard
 
-## Migration from Previous Versions
+## Support
 
-### Version 0.x to 1.0
-
-1. **Backup Existing Data**
-   - Export all evaluations
-   - Save configuration settings
-
-2. **Update Process**
-   ```bash
-   # Via Forge CLI
-   forge deploy --environment production
-   ```
-
-3. **Data Migration**
-   - Automatic migration runs on first launch
-   - Verify data integrity post-migration
-
-### Configuration Migration
-```javascript
-// Old format
-{
-  "criteria": ["accuracy", "completeness"]
-}
-
-// New format (automatic conversion)
-{
-  "criteria": {
-    "accuracy": { "name": "Accuracy", "weight": 1.0 },
-    "completeness": { "name": "Completeness", "weight": 1.0 }
-  }
-}
-```
-
-## Security Considerations
-
-### Post-Installation Security
-
-1. **Review Permissions**
-   - Audit user access levels
-   - Remove unnecessary permissions
-   - Enable audit logging
-
-2. **Configure Security Settings**
-   ```javascript
-   // Enable strict validation
-   ENABLE_STRICT_VALIDATION=true
-   
-   // Set session timeout
-   SESSION_TIMEOUT_MINUTES=30
-   ```
-
-3. **Monitor Access**
-   - Review audit logs regularly
-   - Set up alerts for suspicious activity
-   - Monitor API usage
-
-## Support and Resources
-
-### Getting Help
-
-- **Documentation**: [Full Documentation](../README.md)
-- **API Reference**: [API Documentation](./API-Reference.md)
-- **Development Setup**: [Development Guide](./Development.md)
-- **Security**: [Security Documentation](./Security.md)
-- **Troubleshooting**: [Technical Troubleshooting](./Troubleshooting-Technical.md)
-- **Technical Support**: support@nexusfrontier.net
-
-### Useful Commands
-
-```bash
-# Development installation
-forge deploy
-
-# Production installation
-forge deploy --environment production
-
-# View logs
-forge logs --environment production
-
-# Check installation
-forge install list
-
-# Tunnel for development
-forge tunnel
-```
+- Technical troubleshooting: [Troubleshooting-Technical.md](./Troubleshooting-Technical.md)
+- Support: support@nexusfrontier.net — see the [Support SLA](../Legal/Support-SLA.md)
 
 ---
 
-*Last Updated: January 2025*
-
+*Last Updated: October 2026 — reflects app version 1.3.0*

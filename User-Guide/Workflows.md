@@ -1,561 +1,122 @@
 # Workflow Guides
 
-## Team-Specific Workflows
+## Team Workflows
 
-This guide provides step-by-step workflows for different team roles and common scenarios in the Quality Scorecard for Jira app.
-
----
-
-## Daily Workflows
-
-### Morning Review Workflow (Team Lead)
-
-**Time Required:** 15-20 minutes
-
-**Steps:**
-1. **Open Analytics Dashboard**
-   - Check overnight evaluation activity
-   - Note any significant score changes
-   - Use date range and filters; refresh for latest
-
-2. **Review Coverage & Missing Evaluations**
-   - In Advanced Analytics, review coverage against targets
-   - In Evaluator Analytics, load Missing Evaluations for a selected range (on-demand)
-
-3. **Check Agent Performance**
-   - Sort by trend to identify declining performance
-   - Note agents needing coaching
-
-4. **Review Yesterday's Metrics**
-   - Compare to previous day
-   - Identify patterns or anomalies
-
-5. **Plan Day's Focus**
-   - Schedule coaching sessions if needed
-   - Assign evaluators to priority tickets
-
-**Output:** Daily quality briefing for team standup
+Step-by-step routines for the roles that typically use Quality Scorecard for Jira. Every step refers to a control that exists in the app (see the [Feature Guide](./Feature-Guide.md)); process steps that happen outside the app (meetings, documents) are marked *(outside the app)*.
 
 ---
 
-### End-of-Day Evaluation Workflow (Evaluator)
+## Daily workflows
 
-**Time Required:** 30-45 minutes
+### Morning review (team lead) — 15 minutes
 
-**Steps:**
-1. **Filter Today's Resolved Tickets**
-   ```
-   Status = Resolved AND resolved >= -1d
-   ```
+1. **Analytics Dashboard** → set the date range to yesterday (or the last 7 days) → **Apply Filters**. Note **Total Evaluations** and **Average Score**.
+2. **Evaluator Analytics** → scroll to **Missing Evaluations** → choose yesterday's range → **Load**. Decide who evaluates the remaining tickets; **Remove** any ticket that should not be evaluated.
+3. **Agent Performance** → sort by **Score (Low to High)** and filter **Poor Performance (< 5)** to spot agents who may need coaching.
+4. Share the highlights in stand-up *(outside the app)*.
 
-2. **Prioritize Evaluation Order**
-   - Customer-reported issues first
-   - High-priority tickets second
-   - Standard tickets last
+### End-of-day evaluation (evaluator) — 30 minutes
 
-3. **Perform Evaluations**
-   - Open each ticket
-   - Review resolution thoroughly
-   - Score each criterion
-   - Add constructive feedback
-
-4. **Review Your Work**
-   - Check evaluation summary
-   - Ensure feedback is actionable
-   - Submit evaluations
-
-5. **Update Status**
-   - Mark evaluated tickets
-   - Note any requiring follow-up
-
-**Output:** All day's tickets evaluated with feedback
+1. In Jira, search for the day's resolved tickets, e.g. `project = PROJ AND statusCategory = Done AND resolved >= -1d`.
+2. Open each ticket. In the **Quality Scorecard for Jira** panel, score every criterion and add feedback.
+3. **Save Evaluation**. Repeat for the next ticket.
+4. If you must change something you already saved, open the ticket again, adjust the sliders (they are pre-filled with the latest values) and save again — the newest evaluation is the one dashboards use.
 
 ---
 
-## Weekly Workflows
+## Weekly workflows
 
-### Weekly Performance Review (Individual Agent)
+### Personal review (agent) — 20 minutes
 
-**Time Required:** 30 minutes
+1. **Agent Performance** → **Search agents…** for your name → click your card.
+2. **Performance Analysis** tab: check **Criteria Performance Overview** for your weakest criteria and **Score Evolution** for the direction.
+3. **Evaluated Tickets** tab: read the feedback column; open tickets in Jira where needed.
+4. Pick 2–3 improvement goals *(outside the app)*.
 
-**Steps:**
-1. **Access Agent Performance Dashboard**
-   - Find your name in the list
-   - Click for detailed view
+### Team review (manager) — 45 minutes
 
-2. **Review Your Metrics**
-   - Overall average score
-   - Trend direction and percentage
-   - Individual criteria scores
-
-3. **Analyze Feedback**
-   - Read all evaluator comments
-   - Identify common themes
-   - Note specific improvement areas
-
-4. **Review vs Previous Week**
-   - Check score progression
-   - Identify what changed
-   - Understand impact of improvements
-
-5. **Create Action Plan**
-   - List 2-3 improvement goals
-   - Define specific actions
-   - Set measurable targets
-
-**Output:** Personal improvement plan for the week
+1. **Analytics Dashboard** → date range = last 7 days → **Apply Filters** → review **Criteria Averages**, **Priority Performance**, **Issue Type Performance**.
+2. **Export** → Excel for the meeting pack (worksheets: Overview, Daily Evaluations, Score Distribution, Detailed Evaluations).
+3. **Agent Performance** → same range → sort by **Score (High to Low)**; note top performers and those in the *Poor* band.
+4. **Evaluator Analytics** → same range → check **Biased Evaluators**; toggle **Show Biased Only** to list them. Plan a calibration touch-point if anyone is flagged.
+5. **Advanced Analytics** → **Coverage** tab → compare **Coverage Rate** with the **Target**; **Trends & Capacity** for the short-term trend and recommendations.
 
 ---
 
-### Weekly Team Performance Review (Manager)
+## Monthly workflows
 
-**Time Required:** 1 hour
+### Calibration session (evaluator team) — 2 hours
 
-**Steps:**
-1. **Generate Weekly Report**
-   - Set date range to past 7 days
-   - Include all team members
-   - Export to Excel
+1. **Preparation**: a lead picks 5 recently resolved tickets. Each evaluator scores them independently from the issue panel and saves. *(All evaluations are kept, so this is safe to do on real tickets.)*
+2. In the session, open each ticket's **View History** dialog to compare evaluations side by side (**View Details** shows per-criterion scores and feedback).
+3. Open **Evaluator Analytics** for the month; review **Lenient Evaluator** / **Strict Evaluator** badges and the **Agents** tab of each evaluator's detail sheet for evaluator–agent patterns.
+4. Agree on interpretations and record them in the criterion **Description** fields in the **Metrics** tab (administrator) so they are visible on the evaluation form.
 
-2. **Analyze Team Metrics**
-   - Overall team average
-   - Distribution of scores
-   - Trend analysis
+### Executive report (QA manager) — 2 hours
 
-3. **Identify Top Performers**
-   - Highest average scores
-   - Most improved agents
-   - Consistent performers
-
-4. **Identify Coaching Needs**
-   - Lowest performers
-   - Declining trends
-   - Specific criteria weaknesses
-
-5. **Review Evaluator Consistency**
-   - Check bias indicators
-   - Review evaluator averages
-   - Note calibration needs
-
-6. **Prepare Team Meeting**
-   - Create presentation slides
-   - Highlight achievements
-   - Plan improvement initiatives
-
-**Output:** Weekly team performance presentation
+1. **Analytics Dashboard**, **Agent Performance**, **Evaluator Analytics**, **Advanced Analytics** → date range = the month → **Export** each to Excel.
+2. In **Advanced Analytics** record **Coverage Rate** vs target, the **Long Term** trend, and the **Outlier Detection** list from the **Distribution** tab.
+3. Compile the report *(outside the app)*: overall average, month-over-month change, coverage, bias findings, top and bottom performers, recommendations.
 
 ---
 
-## Monthly Workflows
+## Setup workflows
 
-### Monthly Calibration Session (Evaluator Team)
+### Enabling a new project (administrator) — 30 minutes
 
-**Time Required:** 2 hours
+1. **Apps → Quality Scorecard for Jira** → **Settings** (or **Configure Projects** on first use) → search the project → add it. The change appears under **Recent Changes**.
+2. Open the project → **Metrics** tab → review the criteria. Criteria are shared across projects; adjust names/descriptions/defaults, add or remove criteria, **Save Changes**.
+3. **Settings → Roles & Access** → **Create Role** for evaluators (Evaluate Tickets), leads (Dashboard Access + analytics tabs + Evaluate Tickets) and managers (adds Delete Evaluations, Metrics, Settings). Then **Add Users** and assign roles.
+4. **Settings → Coverage Targets** → set **Overall Target (%)** and per-priority targets → **Save**.
+5. Ask one evaluator to save a test evaluation from an issue panel and confirm it appears in the **Analytics Dashboard** after **Apply Filters**.
 
-**Steps:**
-1. **Preparation (Before Meeting)**
-   - Select 5 sample tickets
-   - Each evaluator scores independently
-   - Don't share scores yet
+### Onboarding a new evaluator — 1 hour
 
-2. **Meeting Setup**
-   - Share screen with app open
-   - Display Evaluator Analytics
-   - Have scoring guide ready
+1. Administrator: **Settings → Roles & Access → Add Users** → assign the evaluator role in each relevant project.
+2. Walk through the evaluation form on a sample ticket; show **View History** so they can see how peers scored similar tickets.
+3. Shadow period: evaluate 5–10 tickets alongside an experienced evaluator; compare via **View History**.
+4. After two weeks, review their card in **Evaluator Analytics** (average vs team, any bias badge) and give feedback.
 
-3. **Review Sample Tickets**
-   For each ticket:
-   - Display ticket details
-   - Each evaluator shares scores
-   - Discuss score differences
-   - Agree on "correct" score
-   - Document reasoning
+### Removing a user's access — 5 minutes
 
-4. **Analyze Patterns**
-   - Review evaluator bias indicators
-   - Discuss scoring tendencies
-   - Identify inconsistencies
-
-5. **Establish Standards**
-   - Update scoring guidelines
-   - Clarify criteria interpretations
-   - Document edge cases
-
-6. **Action Items**
-   - Individual adjustments needed
-   - Training requirements
-   - Follow-up schedule
-
-**Output:** Calibrated scoring standards and action plan
+**Settings → Roles & Access → Project Users** → remove the user. The action is recorded in the audit list. Their past evaluations remain and continue to count in analytics.
 
 ---
 
-### Monthly Executive Report (QA Manager)
+## Housekeeping workflows
 
-**Time Required:** 2-3 hours
+### Correcting or removing a wrong evaluation
 
-**Steps:**
-1. **Data Collection**
-   - Export monthly analytics
-   - Generate trend reports
-   - Compile agent rankings
-   - Calculate team metrics
+- To **correct**: save a new evaluation on the ticket; dashboards use the latest.
+- To **remove entirely** (requires *Delete Evaluations*): **Evaluator Analytics** → open the evaluator's detail sheet → **Evaluated Tickets** → **Delete Evaluation** on the row → confirm. This removes *all* evaluations of that ticket and is logged in the Settings audit list.
 
-2. **Create Executive Summary**
-   - Overall quality score
-   - Month-over-month change
-   - Key achievements
-   - Areas of concern
+### Keeping the Missing Evaluations list meaningful
 
-3. **Analyze Trends**
-   - Long-term quality trends
-   - Seasonal patterns
-   - Impact of initiatives
+Tickets that should never be evaluated (duplicates, auto-closed, won't-fix) can be hidden with **Remove** in the Missing Evaluations table so they no longer distort coverage follow-up.
 
-4. **ROI Calculation**
-   - Quality improvements
-   - Customer satisfaction correlation
-   - Cost savings from fewer defects
+### Sprint retrospective input — 30 minutes
 
-5. **Prepare Visualizations**
-   - Trend charts
-   - Score distributions
-   - Agent performance matrix
-   - Criteria breakdown
-
-6. **Develop Recommendations**
-   - Resource needs
-   - Training programs
-   - Process improvements
-   - Tool enhancements
-
-**Output:** Executive presentation with insights and recommendations
+1. **Analytics Dashboard** → date range = sprint dates → **Apply Filters**.
+2. Note **Average Score**, **Criteria Averages** and **Issue Type Performance**; click bars to open the ticket list and pick concrete examples.
+3. **Export** to CSV and attach to the retrospective page *(outside the app)*.
 
 ---
 
-## Project-Based Workflows
+## Quick reference
 
-### New Project Setup
+| Task | Where | Steps |
+|------|-------|-------|
+| Evaluate a ticket | Issue panel | Score sliders → Feedback → **Save Evaluation** |
+| See who evaluated a ticket | Issue panel | **View History** |
+| Weekly numbers | Analytics Dashboard | Date range → **Apply Filters** → **Export** |
+| Find unevaluated tickets | Evaluator Analytics | Missing Evaluations → range → **Load** |
+| Check for bias | Evaluator Analytics | **Show Biased Only** |
+| Coverage vs target | Advanced Analytics | **Coverage** tab |
+| Give someone access | Settings → Roles & Access | **Add Users** |
+| Change criteria | Metrics | Edit → **Save Changes** |
 
-**Time Required:** 1 hour
-
-**Steps:**
-1. **Configure Project Access**
-   - Add project to allowed projects
-   - Set up evaluator permissions
-   - Configure admin access
-
-2. **Define Evaluation Criteria**
-   - Review default criteria
-   - Customize for project needs
-   - Set weights if needed
-   - Add project-specific criteria
-
-3. **Set Coverage Targets**
-   - Define coverage targets by priority
-   - Adjust overall target
-   - Review under-evaluated areas
-
-4. **Create Evaluation Templates**
-   - Standard evaluation template
-   - Bug evaluation template
-   - Feature evaluation template
-
-5. **Train Team**
-   - Schedule training session
-   - Review evaluation process
-   - Practice with sample tickets
-   - Address questions
-
-6. **Initial Baseline**
-   - Evaluate sample of existing tickets
-   - Establish baseline metrics
-   - Set improvement targets
-
-**Output:** Fully configured project ready for evaluations
+The app has no automation, scheduled reports or alerting features; recurring reports are produced by exporting on a schedule you set in your calendar.
 
 ---
 
-### Sprint Retrospective Analysis
-
-**Time Required:** 45 minutes
-
-**Steps:**
-1. **Filter Sprint Data**
-   - Set date range to sprint duration
-   - Filter by sprint tag/version
-
-2. **Generate Sprint Metrics**
-   - Total evaluations
-   - Average quality score
-   - Score by ticket type
-   - Criteria breakdown
-
-3. **Review vs Previous Sprint**
-   - Quality trend
-   - Volume changes
-   - Performance shifts
-
-4. **Identify Patterns**
-   - Common issues
-   - Recurring feedback
-   - Systematic problems
-
-5. **Prepare Retrospective Input**
-   - Quality highlights
-   - Improvement areas
-   - Specific examples
-   - Actionable recommendations
-
-**Output:** Quality insights for sprint retrospective
-
----
-
-## Special Workflows
-
-### Onboarding New Evaluator
-
-**Time Required:** 2 hours
-
-**Steps:**
-1. **System Access**
-   - Grant necessary permissions
-   - Provide login credentials
-   - Verify app access
-
-2. **Training Session**
-   - Review evaluation criteria
-   - Demonstrate scoring process
-   - Practice on sample tickets
-   - Discuss feedback guidelines
-
-3. **Shadowing Period**
-   - Pair with experienced evaluator
-   - Review 10 tickets together
-   - Discuss scoring decisions
-   - Compare scores
-
-4. **Independent Practice**
-   - Evaluate 5 tickets solo
-   - Review with mentor
-   - Adjust scoring approach
-   - Refine feedback style
-
-5. **Calibration Check**
-   - Compare to team averages
-   - Identify any bias
-   - Provide guidance
-   - Schedule follow-up
-
-**Output:** Trained and calibrated evaluator
-
----
-
-### Quality Crisis Response
-
-**When:** Quality scores drop significantly
-
-**Time Required:** Varies
-
-**Steps:**
-1. **Immediate Analysis**
-   - Identify when decline started
-   - Check affected areas
-   - Review recent changes
-   - Analyze error patterns
-
-2. **Root Cause Investigation**
-   - Interview team members
-   - Review process changes
-   - Check external factors
-   - Analyze specific failures
-
-3. **Emergency Meeting**
-   - Present findings
-   - Discuss immediate actions
-   - Assign responsibilities
-   - Set recovery timeline
-
-4. **Implement Fixes**
-   - Address root causes
-   - Increase evaluation frequency
-   - Provide additional training
-   - Add quality checks
-
-5. **Monitor Recovery**
-   - Daily quality checks
-   - Track improvement
-   - Adjust actions as needed
-   - Report progress
-
-**Output:** Quality recovery plan and execution
-
----
-
-### Annual Performance Review
-
-**Time Required:** 4-5 hours
-
-**Steps:**
-1. **Compile Annual Data**
-   - Export full year's evaluations
-   - Generate annual statistics
-   - Create trend analysis
-   - Calculate improvements
-
-2. **Individual Reviews**
-   For each agent:
-   - Annual average score
-   - Improvement trajectory
-   - Strengths and weaknesses
-   - Peer comparison
-   - Development recommendations
-
-3. **Team Analysis**
-   - Team achievements
-   - Quality milestones
-   - Process improvements
-   - Training effectiveness
-
-4. **Strategic Planning**
-   - Next year's quality targets
-   - Resource requirements
-   - Training plans
-   - Tool enhancements
-
-5. **Documentation**
-   - Individual review documents
-   - Team performance report
-   - Strategic plan
-   - Budget requirements
-
-**Output:** Comprehensive annual review package
-
----
-
-## Automation Workflows
-
-### Automated Daily Report
-
-**Setup Time:** 30 minutes
-
-**Steps:**
-1. **Configure Schedule**
-   - Go to Settings → Automation
-   - Set daily trigger time
-   - Select recipients
-
-2. **Define Report Content**
-   - Yesterday's evaluations
-   - Quality score
-   - Top/bottom performers
-   - Alerts and exceptions
-
-3. **Set Filters**
-   - Projects to include
-   - Minimum evaluation threshold
-   - Score ranges for alerts
-
-4. **Test Configuration**
-   - Run test report
-   - Verify data accuracy
-   - Check formatting
-   - Confirm delivery
-
-**Output:** Automated daily quality reports
-
----
-
-### Alert Configuration
-
-**Setup Time:** 20 minutes
-
-**Steps:**
-1. **Define Alert Conditions**
-   - Score below threshold
-   - Trend declining for X days
-   - No evaluations for Y hours
-   - Bias detection
-
-2. **Set Recipients**
-   - Team leads for performance alerts
-   - Evaluators for bias warnings
-   - Admins for system issues
-
-3. **Configure Notifications**
-   - Email notifications
-   - In-app alerts
-   - Slack integration (if available)
-
-4. **Test Alerts**
-   - Trigger test conditions
-   - Verify delivery
-   - Check message content
-
-**Output:** Proactive alert system
-
----
-
-## Best Practice Workflows
-
-### Continuous Improvement Cycle
-
-**Frequency:** Ongoing
-
-**Steps:**
-1. **Measure**
-   - Current quality metrics
-   - Baseline performance
-   - Problem areas
-
-2. **Analyze**
-   - Root cause analysis
-   - Pattern identification
-   - Impact assessment
-
-3. **Improve**
-   - Implement changes
-   - Provide training
-   - Adjust processes
-
-4. **Control**
-   - Monitor results
-   - Maintain improvements
-   - Prevent regression
-
-5. **Standardize**
-   - Document successful changes
-   - Update procedures
-   - Train team
-
-**Output:** Sustained quality improvement
-
----
-
-## Quick Reference Workflows
-
-### 5-Minute Quality Check
-1. Open Analytics Dashboard
-2. Check today's average score
-3. Review any alerts
-4. Note significant changes
-5. Take action if needed
-
-### Ticket Evaluation (3 minutes)
-1. Open ticket
-2. Read resolution
-3. Score criteria (30 seconds each)
-4. Add feedback (1 minute)
-5. Submit
-
-### Weekly Report Generation
-1. Set date range (last 7 days)
-2. Apply team filter
-3. Export to Excel
-4. Add to shared drive
-5. Send notification
-
----
-
-*For more details on specific features, see the [Feature Guide](./Feature-Guide.md)*
-
+*For details on each screen, see the [Feature Guide](./Feature-Guide.md). For questions, see the [FAQ](./FAQ.md).*

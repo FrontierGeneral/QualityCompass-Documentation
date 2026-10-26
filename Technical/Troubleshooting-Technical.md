@@ -2,738 +2,165 @@
 
 ## Overview
 
-This guide provides solutions for technical issues that administrators and developers may encounter with the Quality Scorecard for Jira.
+Solutions for issues administrators and developers may encounter with Quality Scorecard for Jira. Every symptom below maps to behaviour that actually exists in the app; error strings are quoted from the source so they can be searched in `forge logs`.
 
 ## Quick Links
-- [Architecture Overview](./Architecture.md) - System design for context
-- [API Reference](./API-Reference.md#error-handling) - API error codes and handling
-- [Installation Guide](./Installation.md#troubleshooting-installation) - Installation issues
-- [Development Guide](./Development.md#debugging) - Development debugging
-- [Security Documentation](./Security.md#incident-response) - Security incidents
+- [Architecture Overview](./Architecture.md)
+- [API Reference](./API-Reference.md) - Resolver payloads and authorization rules
+- [Installation Guide](./Installation.md) - First-run configuration
+- [Development Guide](./Development.md) - Tunnel, logs, build
+- [Security Documentation](./Security.md) - Permission model
 
-## Common Technical Issues
+---
 
-### Installation Issues
+## Installation and Visibility Issues
 
-#### App Not Appearing After Installation
+### The app is not in the Apps menu
+- Confirm it is listed and **Enabled** under **Apps → Manage apps**.
+- The global page is titled **Quality Scorecard for Jira**; it is under the **Apps** menu, not under project settings.
+- Developers: `forge install list` shows which sites/environments have the app. The module key is `ticket-evaluation-dashboard` (global page) and `ticket-evaluation-panel` (issue panel).
 
-**Symptoms:**
-- App installed successfully but not visible in projects
-- "Apps" menu doesn't show Quality Scorecard for Jira
+### The issue panel does not appear on an issue
+- The issue panel is rendered on every issue, but it only works for issues in **allowed projects**. If the project is not allowed, the permission check fails (`Access denied: Project <KEY> is not in allowed projects` in the logs) and **Save Evaluation** shows the toast "Not allowed – You do not have permission to evaluate this ticket."
+- Some Jira issue layouts collapse app panels; look for **Quality Scorecard for Jira** in the panel list / "…" menu of the issue view.
 
-**Diagnosis:**
+### Landing page says "No projects are configured yet"
+Expected on first run. An administrator must click **Configure Projects** and add at least one project. Non-admins see "Ask your administrator to add your projects to the QA app's allowed list."
+
+---
+
+## Permission and Access Issues
+
+### A user cannot see the dashboard or some tabs
+Access is granted per project through **Settings → Roles & Access**. Verify:
+1. The user has a role in **this** project (roles are not shared across projects).
+2. The role includes `Dashboard Access` plus the relevant tab permissions.
+3. The user is not expecting admin behaviour – only users with Jira's global **Administer Jira** permission (or members of the optional `settings-admin-group` group) get everything automatically.
+
+Useful check from the browser console inside the app iframe is not possible (Custom UI sandbox); instead have the user reload, or verify via `invoke('getMyPermissions', { projectKey })` in a development build.
+
+### "Not allowed to evaluate tickets"
+The user lacks `ticket.evaluate` (Evaluate Tickets) in the ticket's project. Assign a role that includes it.
+
+### "Unauthorized: Missing evaluation.delete permission"
+Deleting a ticket's evaluations requires the `Delete Evaluations` permission.
+
+### "Only administrators can …"
+Role definitions, role assignments, project allow-list, coverage targets and evaluator-name overrides are admin-only; `Settings` tab permission is not enough.
+
+### "Storage key not permitted for read|write|delete"
+The frontend asked the generic storage resolver for a key outside its allow-list. In a stock build this indicates a stale cached frontend bundle (hard-refresh) or a modified client. The attempt is also logged as an `ACCESS_DENIED` audit event.
+
+### "Not allowed to view issues in this project"
+`getTicketMetadataBatch` verified that the caller lacks Jira **Browse Projects** on the project. Fix the Jira permission scheme.
+
+---
+
+## Data and Analytics Issues
+
+### Evaluations saved but not shown in dashboards
+- Dashboards filter by **date range** and, for most cards, by the ticket's **created** or **resolved** date fetched from Jira — not by the evaluation timestamp. Widen the range and click **Apply Filters**.
+- Analytics are cached (in-memory up to 30 min; Advanced Analytics up to 2 h in IndexedDB). Use **Refresh** on the Advanced Analytics tab or reload the page.
+- The evaluation's `ticketKey` must start with the project key of the dashboard you are viewing.
+
+### Missing Evaluations table is empty
+The table requires you to pick a date range and click **Load**. It lists issues with `statusCategory = Done` created in the range (capped at 500) that have no evaluation. Rows removed with the **Remove** action are remembered in `removed-missing-evaluations`.
+
+### Numbers differ between tabs
+- Analytics Dashboard uses tickets by **created** date; Advanced Analytics coverage uses **resolution** date; Agent Performance uses the latest evaluation per ticket. Different bases, different totals.
+- Evaluator Analytics "Biased Evaluators" flags evaluators whose average deviates from the team average by more than **2.5 points**.
+
+### Evaluator shows as "Current User (xxxxxxxx)" or an account id
+The display name could not be resolved. Causes: the `read:jira-user` scope was not granted on upgrade (`forge install --upgrade`), or the account is deactivated/closed. Names are resolved through `batchGetUsers` → Jira `GET /rest/api/3/user`, then cached in `user-displayname-cache`.
+
+### "JQL query too long" / "Invalid JQL: contains forbidden characters"
+Backend validation (`validateJQL`): max 5000 characters; `;`, `--`, `/*`, `\\` and control characters are rejected. Reduce the number of ids per batch or remove the offending characters.
+
+### Jira search returns HTTP 410
+Atlassian has retired `POST /rest/api/3/search` on some sites. The app automatically retries with `POST /rest/api/3/search/jql`. If you see repeated 410s in logs with no fallback, you are running a build older than the fallback (upgrade).
+
+---
+
+## Export Issues
+
+### Export button does nothing / file empty
+- Exports only contain the currently filtered dataset; apply filters and ensure the table shows rows.
+- Browser pop-up/download blockers can stop the Blob download; allow downloads for `*.atlassian.net`.
+- Only **CSV** and **Excel (.xlsx)** are supported. There is no PDF or JSON export.
+
+### Spreadsheet shows a leading apostrophe in some cells
+Intentional: values starting with `=`, `+`, `-` or `@` are prefixed to prevent CSV-injection.
+
+---
+
+## Performance Issues
+
+### Dashboard slow on large projects
+- The app stores evaluations as whole JSON arrays per key. Load time grows linearly with evaluation count, and Forge's per-value size limit is reached after a few hundred evaluations in one key (the global `ticket-evaluations` key first). Symptoms of hitting the limit: **Save Evaluation** fails with a storage error in `forge logs` while reads still work. See [Entity Storage Migration Plan](./Entity-Storage-Migration-Plan.md).
+- Jira metadata is fetched in batches of 50 ids, at most 8 concurrent calls. A 2 000-ticket range needs ~40 calls.
+- Advanced Analytics computes in a Web Worker and serves the last result from IndexedDB while refreshing in the background; the first load after a cache miss is the slow one.
+
+### "429 Too Many Requests" in logs
+The app has no server-side rate limiter; these come from Jira/Forge limits. Reduce concurrency by narrowing date ranges. The client retries up to 3 times with linear back-off before surfacing the error.
+
+### Browser tab memory grows
+Large exports build the whole workbook in memory. Export smaller date ranges.
+
+---
+
+## Build and Deployment (developers)
+
+### `vite:worker-import-meta-url Invalid value 'iife' for option 'worker-format'`
+Keep `worker: { format: 'es' }` in `vite.config.ts` and create workers via `new URL(..., import.meta.url)`.
+
+### Deployment fails: scopes changed
+After editing `permissions.scopes` in `manifest.yml`, every site needs `forge install --upgrade -e <env>`; Marketplace versions need re-approval.
+
+### Resolver changes do not take effect
+The manifest handler is `index.handler` → `src/index.js`. The root `index.js` file is a legacy copy and is **not** deployed; edit `src/index.js`.
+
+### "Resolver not found" / `invoke` rejects immediately
+Check the name against the list in [API Reference](./API-Reference.md). `makeApiRequest`, `debugUserFetch`, `testUserAPI` and `runPersonalDataReporter` were removed.
+
+### Checking the scheduled job
 ```bash
-# Check installation status
-forge install list
-
-# Verify app deployment
-forge environment production
+forge logs -e production --function personalDataReporter --since 7d
 ```
-
-**Solutions:**
-1. **Clear Jira cache:**
-   ```
-   Settings → System → Cache Management → Clear all
-   ```
-
-2. **Verify manifest configuration:**
-   ```yaml
-   # manifest.yml should include
-   modules:
-     jira:projectPage:
-       - key: qa-app-project-page
-         resource: main
-   ```
-
-3. **Reinstall the app:**
-   ```bash
-   forge uninstall
-   forge deploy --environment production
-   forge install
-   ```
-
-#### Permission Errors During Installation
-
-**Error:** `Insufficient permissions to install app`
-
-**Solution:**
-```bash
-# Verify admin permissions
-# User must be Jira administrator
-
-# Check Forge permissions
-forge whoami
-
-# Re-authenticate if needed
-forge logout
-forge login
-```
-
-For complete installation instructions, see [Installation Guide](./Installation.md).
+Look for `[personalDataReporting]` summary lines (`closed`, `updated` counts) and `erasure failed` warnings.
 
 ---
 
-### Storage Issues
-
-#### Storage Quota Exceeded
-
-**Error:** `ForgeStorageError: Storage quota exceeded`
-
-**Diagnosis:**
-```javascript
-// Check storage usage
-const storageInfo = await storage.query()
-  .where('key', startsWith('evaluations'))
-  .limit(1000)
-  .getMany();
-console.log(`Items in storage: ${storageInfo.results.length}`);
-```
-
-**Solutions:**
-
-1. **Clean old data:**
-```javascript
-// Remove evaluations older than 1 year
-const oneYearAgo = new Date();
-oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-
-const oldEvaluations = evaluations.filter(
-  e => new Date(e.timestamp) < oneYearAgo
-);
-// Archive before deletion
-await exportToBackup(oldEvaluations);
-// Remove from storage
-await storage.set('evaluations', currentEvaluations);
-```
-
-2. **Optimize storage structure:**
-```javascript
-// Split large arrays into chunks
-const CHUNK_SIZE = 100;
-for (let i = 0; i < evaluations.length; i += CHUNK_SIZE) {
-  const chunk = evaluations.slice(i, i + CHUNK_SIZE);
-  await storage.set(`evaluations_${i / CHUNK_SIZE}`, chunk);
-}
-```
-
-#### Storage Read/Write Failures
-
-**Error:** `Failed to read/write storage`
-
-**Solutions:**
-```javascript
-// Implement retry logic
-async function storageWithRetry(operation, maxRetries = 3) {
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await operation();
-    } catch (error) {
-      if (i === maxRetries - 1) throw error;
-      await new Promise(resolve => 
-        setTimeout(resolve, Math.pow(2, i) * 1000)
-      );
-    }
-  }
-}
-
-// Usage
-const data = await storageWithRetry(() => 
-  storage.get('evaluations')
-);
-```
-
----
-
-### Performance Issues
-
-#### Slow Dashboard Loading
-
-**Symptoms:**
-- Analytics dashboard takes > 10 seconds to load
-- Timeout errors
-
-**Diagnosis:**
-```javascript
-// Add performance logging
-console.time('DataFetch');
-const data = await fetchAllEvaluations();
-console.timeEnd('DataFetch');
-
-console.time('Processing');
-const processed = processAnalytics(data);
-console.timeEnd('Processing');
-```
-
-**Solutions:**
-
-1. **Persistent cache + SWR:** Advanced analytics reads from IndexedDB first and refreshes in background.
-
-2. **Implement pagination:**
-```javascript
-// Instead of loading all data
-const allEvaluations = await storage.get('evaluations');
-
-// Load in pages
-async function* getEvaluationsPaginated(pageSize = 100) {
-  let page = 0;
-  while (true) {
-    const data = await storage.get(`evaluations_page_${page}`);
-    if (!data || data.length === 0) break;
-    yield data;
-    page++;
-  }
-}
-```
-
-3. **Add caching layer:**
-```javascript
-// Cache processed analytics
-const cacheKey = `analytics_${dateRange}_${filters}`;
-const cached = await storage.get(cacheKey);
-
-if (cached && cached.timestamp > Date.now() - 3600000) {
-  return cached.data;
-}
-
-const fresh = await calculateAnalytics();
-await storage.set(cacheKey, {
-  data: fresh,
-  timestamp: Date.now()
-});
-```
-
-#### Memory Leaks
-
-**Symptoms:**
-- Browser tab crashes
-- Increasing memory usage over time
-
-**Diagnosis:**
-```javascript
-// Monitor memory usage
-if (performance.memory) {
-  console.log({
-    used: performance.memory.usedJSHeapSize / 1048576,
-    total: performance.memory.totalJSHeapSize / 1048576,
-    limit: performance.memory.jsHeapSizeLimit / 1048576
-  });
-}
-```
-
-**Solutions:**
-```javascript
-// Clean up event listeners
-useEffect(() => {
-  const handler = (e) => handleEvent(e);
-  window.addEventListener('resize', handler);
-  
-  return () => {
-    window.removeEventListener('resize', handler);
-  };
-}, []);
-
-// Clear large data structures
-useEffect(() => {
-  return () => {
-    // Cleanup on unmount
-    largeDataArray = null;
-    cacheMap.clear();
-  };
-}, []);
-```
-
----
-
-### API Issues
-
-#### Rate Limiting Errors
-
-**Error:** `429 Too Many Requests`
-
-**Solutions:**
-
-1. **Implement exponential backoff:**
-```javascript
-async function apiCallWithBackoff(fn, maxRetries = 5) {
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await fn();
-    } catch (error) {
-      if (error.status !== 429 || i === maxRetries - 1) {
-        throw error;
-      }
-      const delay = Math.min(1000 * Math.pow(2, i), 30000);
-      await new Promise(r => setTimeout(r, delay));
-    }
-  }
-}
-```
-
-2. **Batch API requests:**
-```javascript
-// Instead of individual calls
-for (const id of userIds) {
-  const user = await getUser(id);
-}
-
-// Use batch endpoint
-const users = await batchGetUsers(userIds);
-```
-
-#### Authentication Failures
-
-**Error:** `401 Unauthorized`
-
-**Diagnosis:**
-```javascript
-// Check authentication context
-resolver.define('debugAuth', async (req) => {
-  console.log('Context:', req.context);
-  console.log('Principal:', req.principal);
-  return { authenticated: !!req.context.accountId };
-});
-```
-
-**Solutions:**
-```yaml
-# Verify permissions in manifest.yml
-permissions:
-  scopes:
-    - read:jira-work
-    - write:jira-work
-    - storage:app
-    - read:user:jira
-```
-
-For authentication details, see [Security Documentation](./Security.md#authentication--authorization) and [API Reference](./API-Reference.md#authentication).
-
----
-
-### Build and Deployment Issues
-
-#### Build Failures
-
-**Error:** `Build failed: Module not found`
-
-**Solutions:**
-```bash
-# Clean install dependencies
-rm -rf node_modules package-lock.json
-npm install
-
-# Clear build cache
-rm -rf static/hello-world/dist
-npm run build
-
-# Check for version conflicts
-npm ls
-```
-
-#### Worker Build Errors (Vite)
-
-**Error:** `vite:worker-import-meta-url Invalid value 'iife' for option 'worker-format'`
-
-**Solution:**
-```ts
-// Create workers via URL with module type
-new Worker(new URL('./workers/advancedAnalyticsWorker.ts', import.meta.url), { type: 'module' });
-
-// Ensure vite.config.ts includes
-export default defineConfig({
-  worker: { format: 'es' }
-});
-```
-
-#### Deployment Failures
-
-**Error:** `Deployment failed: Invalid manifest`
-
-**Validation:**
-```bash
-# Validate manifest
-forge lint
-
-# Check manifest syntax
-cat manifest.yml | yaml-lint
-```
-
-**Common manifest issues:**
-```yaml
-# ❌ Wrong
-app:
-  id: ${APP_ID}  # Variable not set
-
-# ✅ Correct
-app:
-  id: ari:cloud:ecosystem::app/actual-id-here
-```
-
----
-
-### Database/Query Issues
-
-#### JQL Query Failures
-
-**Error:** `Invalid JQL query`
-
-**Debugging:**
-```javascript
-// Log the actual JQL being sent
-console.log('JQL Query:', jql);
-
-// Test in Jira directly
-// Navigate to Issues → Search → Advanced
-// Paste the JQL query
-```
-
-**Common JQL issues:**
-```javascript
-// ❌ Wrong: Unescaped special characters
-const jql = `project = ${projectKey} AND summary ~ "${searchTerm}"`;
-
-// ✅ Correct: Properly escaped
-const jql = `project = ${projectKey} AND summary ~ "${searchTerm.replace(/"/g, '\\"')}"`;
-```
-
-#### Data Corruption
-
-**Symptoms:**
-- Inconsistent evaluation data
-- Missing or duplicate entries
-
-**Recovery procedure:**
-```javascript
-// 1. Export current data
-const backup = await storage.get('evaluations');
-await exportToFile(backup, 'backup.json');
-
-// 2. Validate data structure
-const validated = backup.filter(e => {
-  return e.ticketId && 
-         e.evaluatorId && 
-         typeof e.averageScore === 'number' &&
-         e.timestamp;
-});
-
-// 3. Remove duplicates
-const unique = Array.from(
-  new Map(validated.map(e => 
-    [`${e.ticketId}_${e.timestamp}`, e]
-  )).values()
-);
-
-// 4. Restore clean data
-await storage.set('evaluations', unique);
-```
-
----
-
-### Frontend Issues
-
-#### React Component Errors
-
-**Error:** `Cannot read property of undefined`
-
-**Debugging:**
-```javascript
-// Add error boundaries
-class ErrorBoundary extends React.Component {
-  componentDidCatch(error, errorInfo) {
-    console.error('Component error:', error, errorInfo);
-    // Log to monitoring service
-  }
-  
-  render() {
-    if (this.state.hasError) {
-      return <h1>Something went wrong.</h1>;
-    }
-    return this.props.children;
-  }
-}
-```
-
-**Prevention:**
-```javascript
-// Use optional chaining
-const score = evaluation?.criteria?.accuracy ?? 0;
-
-// Provide default values
-const { 
-  data = [], 
-  loading = false, 
-  error = null 
-} = useAnalytics();
-```
-
-#### State Management Issues
-
-**Symptoms:**
-- State not updating
-- Stale data displayed
-
-**Solutions:**
-```javascript
-// Use functional updates for state
-setState(prevState => ({
-  ...prevState,
-  newValue: calculated
-}));
-
-// Force re-render if needed
-const [, forceUpdate] = useReducer(x => x + 1, 0);
-// Call forceUpdate() when needed
-
-// Clear stale cache
-useEffect(() => {
-  cacheService.clear();
-}, [filters]);
-```
-
----
-
-### Security Issues
-
-#### CSP Violations
-
-**Error:** `Refused to execute inline script`
-
-**Solution:**
-```javascript
-// Move inline scripts to external files
-// ❌ Wrong
-<button onclick="handleClick()">
-
-// ✅ Correct
-<button id="myButton">
-<script src="handlers.js"></script>
-
-// In handlers.js
-document.getElementById('myButton')
-  .addEventListener('click', handleClick);
-```
-
-#### XSS Prevention Failures
-
-**Diagnosis:**
-```javascript
-// Test for XSS vulnerabilities
-const testInputs = [
-  '<script>alert("XSS")</script>',
-  'javascript:alert("XSS")',
-  '<img src=x onerror=alert("XSS")>'
-];
-
-testInputs.forEach(input => {
-  const sanitized = sanitizeInput(input);
-  console.assert(!sanitized.includes('<script>'));
-});
-```
-
-For complete security implementation, see [Security Documentation](./Security.md#input-validation).
-
----
-
-## Debugging Tools
-
-### Forge CLI Commands
+## Diagnostics Cheat-Sheet
 
 ```bash
-# View logs
-forge logs --environment production
-
-# Check app status
-forge list
-
-# Validate configuration
-forge lint
-
-# Run in development mode
-forge tunnel
+forge install list                       # where is the app installed
+forge logs -e production --since 1h      # backend errors
+forge lint                               # manifest/runtime problems
 ```
 
-### Browser DevTools
+In Jira:
+- **Apps → Manage apps → Quality Scorecard for Jira** – version, scopes, enable/disable.
+- **Settings → Project Access & Recent Changes** – who changed the allow-list.
+- **Settings → Roles & Access → audit list** – role/assignment/deletion history.
 
-```javascript
-// Performance profiling
-performance.mark('myTask-start');
-// ... code to profile ...
-performance.mark('myTask-end');
-performance.measure('myTask', 'myTask-start', 'myTask-end');
-
-// Memory profiling
-console.memory
-
-// Network monitoring
-// Use Network tab to check API calls
-```
-
-### Logging Strategy
-
-```javascript
-// Structured logging
-const log = (level, message, context = {}) => {
-  const entry = {
-    timestamp: new Date().toISOString(),
-    level,
-    message,
-    ...context
-  };
-  
-  if (process.env.NODE_ENV === 'development') {
-    console.log(entry);
-  } else {
-    // Send to logging service
-    sendToLoggingService(entry);
-  }
-};
-
-// Usage
-log('error', 'API call failed', {
-  endpoint: '/api/evaluate',
-  error: error.message,
-  userId: context.accountId
-});
-```
-
----
-
-## Emergency Procedures
-
-### System Down
-
-1. **Immediate Actions:**
-   ```bash
-   # Check deployment status
-   forge install list
-   
-   # Check for Atlassian incidents
-   # Visit: https://status.atlassian.com
-   ```
-
-2. **Rollback if needed:**
-   ```bash
-   # Deploy previous version
-   git checkout <previous-version-tag>
-   forge deploy --environment production
-   ```
-
-### Data Loss
-
-1. **Check backups:**
-   ```javascript
-   // Automated backups location
-   const backups = await storage.get('backups');
-   ```
-
-2. **Restore from export:**
-   ```javascript
-   // If users exported data
-   const importData = JSON.parse(fileContent);
-   await storage.set('evaluations', importData.evaluations);
-   ```
-
-### Security Breach
-
-1. **Immediate response:**
-   - Disable affected features
-   - Revoke compromised credentials
-   - Enable additional logging
-
-2. **Investigation:**
-   ```javascript
-   // Check audit logs
-   const suspiciousActivity = auditLogs.filter(log => 
-     log.eventType === 'UNAUTHORIZED_ACCESS' ||
-     log.result === 'FAILURE'
-   );
-   ```
-
----
-
-## Monitoring Setup
-
-### Health Checks
-
-```javascript
-// Endpoint for monitoring
-resolver.define('healthCheck', async () => {
-  const checks = {
-    storage: false,
-    api: false,
-    timestamp: new Date().toISOString()
-  };
-  
-  try {
-    await storage.get('health-check');
-    checks.storage = true;
-  } catch (e) {
-    console.error('Storage check failed:', e);
-  }
-  
-  try {
-    await api.asApp().requestJira('/rest/api/3/myself');
-    checks.api = true;
-  } catch (e) {
-    console.error('API check failed:', e);
-  }
-  
-  return checks;
-});
-```
-
-### Alerts Configuration
-
-```javascript
-// Alert thresholds
-const ALERT_THRESHOLDS = {
-  errorRate: 0.05,        // 5% error rate
-  responseTime: 5000,     // 5 seconds
-  storageUsage: 0.9,      // 90% of quota
-  memoryUsage: 0.8        // 80% of limit
-};
-```
+Audit entries written by the backend (`audit-log:*`) are not visible in the UI; include the approximate time and the user's account id when contacting support so they can be retrieved.
 
 ---
 
 ## Support Escalation
 
-### Escalation Path
-
-1. **Level 1: Check documentation**
-   - This troubleshooting guide
-   - FAQ section
-   - Known issues list
-
-2. **Level 2: Development team**
-   - Email: support@nexusfrontier.net
-   - Slack: #quality-scorecard-for-jira-dev
-
-3. **Level 3: Atlassian support**
-   - For Forge platform issues
-   - https://support.atlassian.com
-
-### Information to Provide
-
-When reporting issues, include:
-- Error messages (exact text)
-- Browser console output
-- Network tab HAR file
-- Steps to reproduce
-- Environment details
-- Time of occurrence
-- Affected users
+1. This guide and the [FAQ](../User-Guide/FAQ.md).
+2. **support@nexusfrontier.net** — see [Support SLA](../Legal/Support-SLA.md) for response targets. Include: exact error text, steps to reproduce, project key, approximate time (with timezone), affected user's account id, browser, and screenshots.
+3. Atlassian Support for platform-level outages: https://status.atlassian.com and https://support.atlassian.com.
 
 ## Additional Resources
 
-- [Architecture Overview](./Architecture.md) - System architecture
-- [API Reference](./API-Reference.md) - API documentation
-- [Installation Guide](./Installation.md) - Setup instructions
-- [Development Guide](./Development.md) - Development workflow
-- [Security Documentation](./Security.md) - Security measures
+- [Architecture Overview](./Architecture.md)
+- [API Reference](./API-Reference.md)
+- [Installation Guide](./Installation.md)
+- [Development Guide](./Development.md)
+- [Security Documentation](./Security.md)
 
 ---
 
-*For urgent technical issues, contact: support@nexusfrontier.net*
-
-*Last Updated: January 2025*
-
+*Last Updated: October 2026 — reflects app version 1.3.0*

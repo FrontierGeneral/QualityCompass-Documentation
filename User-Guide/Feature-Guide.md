@@ -2,353 +2,217 @@
 
 ## Complete Feature Reference
 
-This guide provides detailed information about every feature in the Quality Scorecard for Jira app. Each section includes step-by-step instructions, tips, and best practices.
-
-## 📊 Analytics Dashboard
-
-### Overview
-The Analytics Dashboard is your central hub for understanding quality metrics across your project.
-
-### Key Features
-
-#### 1. Key Metrics
-**What it shows:**
-- Total evaluations completed
-- Overall average score
-- Current quality trend
-- Number of active evaluators
-
-**How to use:**
-1. Open the Analytics tab
-2. Metrics use caching and update automatically every few minutes; click Refresh for the latest
-3. Click on any metric for detailed breakdown
-
-**Pro tip:** Set up a dashboard on a monitor for team visibility!
-
-#### 2. Score Distribution Chart
-**Purpose:** Visualize how scores are distributed
-
-**Understanding the chart:**
-- X-axis: Score levels
-- Y-axis: Number of evaluations
-
-**What to look for:**
-- Bell curve = normal distribution
-- Skewed left = quality issues
-- Skewed right = excellent performance
-
-#### 3. Trend Analysis
-**Features:**
-- Daily, weekly, monthly views
-- Moving averages
-- Trend indicators (↑ improving, ↓ declining, → stable)
-
-**How to analyze:**
-1. Select your time range
-2. Look for patterns
-3. Correlate with team events (training, new processes)
-
-#### 4. Criteria Breakdown
-**Shows:** Performance by individual criteria
-
-**Using this data:**
-- Identify weakest areas
-- Plan targeted training
-- Track improvement initiatives
-
-### Export Options
-1. **Click Export** button
-2. **Choose format:**
-   - CSV for data analysis
-   - Excel for formatted reports
-3. **Select data range**
-4. **Download file**
+This guide describes every screen and control in Quality Scorecard for Jira as shipped. Labels in **bold** match the text you see in the app.
 
 ---
 
-## 👤 Agent Performance Dashboard
+## Evaluation panel (issue view)
 
-### Overview
-Track and analyze individual agent performance to provide targeted coaching and recognition.
+Found in the **Quality Scorecard for Jira** panel on any issue of an enabled project.
 
-### Core Features
+### Evaluation form
+- One slider per criterion, whole numbers **0–10**. Sliders start at the criterion's default (normally 5) or, if the ticket already has an evaluation, at the latest evaluation's values.
+- **Feedback** text area (optional).
+- **Save Evaluation** stores a new evaluation with your name and timestamp and shows an *Evaluation Saved* confirmation.
+- **View History** opens the Evaluation History dialog.
 
-#### 1. Performance Table
-**Columns:**
-- Agent name
-- Total evaluations
-- Average score
-- Trend (with percentage)
-- Top criteria
+Notes:
+- Each save creates a new record; previous evaluations are never overwritten. Dashboards use the latest evaluation of each ticket.
+- You need the **Evaluate Tickets** permission in the ticket's project; otherwise saving shows *Not allowed*.
+- The average score is the plain mean of all criteria scores.
 
-**Sorting options:**
-- By name (A-Z, Z-A)
-- By score (highest/lowest)
-- By evaluation count
-- By trend
-
-#### 2. Individual Agent View
-**Access:** Click on any agent's name
-
-**Details shown:**
-- Complete evaluation history
-- Score progression over time
-- Criteria performance radar chart
-- All feedback received
-- Comparison to team average
-
-#### 3. Performance Filters
-**Available filters:**
-- Date range
-- Minimum evaluations
-- Score threshold
-- Specific criteria
-- Evaluator
-
-**How to filter:**
-1. Click Filter button
-2. Set your criteria
-3. Apply filters
-4. Results update instantly
-
-#### 4. Agent Details
-Click an agent to view their detailed performance, including evaluation history, score trends, and criteria breakdown. Use filters and sorting to refine the view.
-
-### Performance Indicators
-
-#### Trend Calculation
-- **Improving (↑):** Recent average > historical by 0.5+ points
-- **Stable (→):** Change within ±0.5 points
-- **Declining (↓):** Recent average < historical by 0.5+ points
+### Evaluation History
+A table of the evaluations saved for the issue, newest first: **Date**, **Evaluator**, **Score**, and a **View Details** action that reveals the per-criterion scores and the feedback of that evaluation. The dialog shows the **10 most recent** evaluations; there is no paging control, so older evaluations of a heavily re-evaluated ticket are visible only through the dashboards' detail sheets and exports.
 
 ---
 
-## 🎯 Evaluator Analytics
+## Project landing page
 
-### Overview
-Monitor evaluator consistency and identify potential bias in scoring.
-
-### Key Metrics
-
-#### 1. Evaluator Statistics
-**For each evaluator:**
-- Total evaluations performed
-- Average score given
-- Scoring distribution
-- Bias indicators
-- Time patterns
-
-#### 2. Bias Detection
-**System identifies:**
-- **Lenient scorers**: Average 2.5+ points above team
-- **Strict scorers**: Average 2.5+ points below team
-
-Bias flags include:
-- Outlier (Yes/No)
-- Direction (lenient/strict/neutral)
-
-#### 3. Evaluator Matrix
-**Shows:** How each evaluator scores each agent
-
-**Reading the matrix:**
-- Rows: Evaluators
-- Columns: Agents
-- Colors: Score ranges
-- Numbers: Average scores
-
-**Use cases:**
-- Identify evaluator-agent patterns
-- Detect favoritism or conflicts
-- Ensure fair distribution
+Opened from **Apps → Quality Scorecard for Jira**.
+- Lists the projects enabled for the app with their evaluation counts; click a card to open its dashboard.
+- Opens the dashboard automatically when exactly one project is enabled.
+- Administrators see a **Settings** button (and, when nothing is configured yet, **Configure Projects**) to manage the project allow-list.
+- A theme toggle (light/dark) is available on every page; the preference is saved.
 
 ---
 
-## 📈 Advanced Analytics
+## Analytics Dashboard tab
 
-### Overview
-View deeper breakdowns and trends based on your selected filters. Focus areas include coverage views and evaluator/agent trends.
+### Filters card
+- **Date Range** picker (start–end). Click **Apply Filters** to reload.
+- **Export** with a format selector: **CSV** or **Excel**.
 
-### Available Views
-- Trend lines with recent vs baseline performance
-- Coverage by priority/issue type
-- Distribution charts with click-through details
+### Cards
+| Card | Content |
+|------|---------|
+| **Average Score** | Mean score of all evaluations in the range |
+| **Total Evaluations** | Number of evaluations submitted |
+| **Evaluations by Day** | Bar chart of evaluations per day |
+| **Average Score by Created Day** | Average of evaluated tickets grouped by the ticket's creation date |
+| **Score Distribution** | Histogram of average scores |
+| **Criteria Averages** | Average per criterion |
+| **Priority Performance** | Average score by Jira priority |
+| **Issue Type Performance** | Average score by Jira issue type |
 
-Note: Predictive forecasting, capacity insights, correlations, patterns, and coverage are available in this tab. Initial load may take longer; subsequent loads are near-instant.
+Clicking a bar in the Priority / Issue Type / Distribution charts opens a **ticket detail sheet** listing the matching tickets (priority, assignee, evaluator, score) with links to Jira.
 
-## 📝 Evaluation Management
+### Raw Data table
+All evaluated tickets in the range with ticket key, summary, priority, assignee, evaluator, score and feedback. Sortable columns; **10 / 20 / 50 / 100** rows per page; click the ticket key to open it in Jira.
 
-### Creating Evaluations
-
-#### Standard Evaluation Process
-1. **Open ticket** to evaluate
-2. **Click "Evaluate"** button
-3. **Score each criterion** (0-10)
-4. **Add feedback** (required for scores < 7)
-5. **Review and submit**
-
-#### Multiple Evaluations
-**Note:** Each ticket can have multiple evaluations, but only the most recent evaluation is used in analytics calculations.
-
-### Editing Evaluations
-
-#### When you can edit:
-- Any time
-- With appropriate permissions
-
-#### How to edit:
-1. Find evaluation in history
-2. Click "Edit" button
-3. Modify scores/feedback
-4. Save changes
-5. Changes are saved
-
-### Evaluation Best Practices
-
-#### Consistency Tips:
-- Use the full 0-10 scale
-- Provide specific feedback
-- Evaluate promptly after ticket resolution
-- Be consistent across similar tickets
+What the Analytics Dashboard does **not** have: an evaluator filter, a trend KPI, an "active evaluators" KPI or weekly/monthly roll-ups. Use Evaluator Analytics and Advanced Analytics for those.
 
 ---
 
-## 📥 Data Export
+## Agent Performance tab
 
-### Export Formats
+"Agents" are the Jira **assignees** of evaluated tickets.
 
-#### CSV Export
-**Best for:**
-- Simple data analysis
-- Database imports
-- Basic spreadsheets
+### Filters card
+- **Search agents…** (name)
+- Sort: **Score (High to Low)**, **Score (Low to High)**, **Most Evaluations**, **Least Evaluations**, **Name (A-Z)**, **Name (Z-A)**
+- Performance band: **All Agents**, **Poor Performance (< 5)**, **Average Performance (5-7.9)**, **Good Performance (≥ 8)**
+- **Date Range** + **Apply Filters**
+- **Export** (CSV / Excel)
 
-**Includes:**
-- Raw data without formatting
-- All selected fields
-- UTF-8 encoding
+### Summary cards
+**Total Agents**, **Average Score** (weighted by evaluation count), **Total Evaluations**, **Performance Distribution** (count of Poor / Avg / Good agents).
 
-#### Excel Export
-**Best for:**
-- Formatted reports
+### Agent cards and detail view
+Each card shows the agent's average, evaluation count and top criteria. Clicking a card opens the agent detail modal with two tabs:
+- **Performance Analysis** – Criteria Performance Overview, Score Evolution (by ticket creation date), Score Distribution, Performance by Priority, Performance by Issue Type, Detailed Criteria Scores.
+- **Evaluated Tickets** – table of the agent's evaluated tickets with evaluator and feedback; click to open in Jira.
 
-**Features:**
-- Single worksheet
-- Bold headers and auto-sized columns
-
-### Export Options
-
-#### Data Selection
-1. **Full export**: All available data
-2. **Filtered export**: Current filter applied
-3. **Custom range**: Specific date range
-4. **Selective fields**: Choose columns
-
-#### Manual Export
-**Export data on demand:**
-1. Click the Export button in any dashboard
-2. Choose format (CSV or Excel)
-3. Download file
+Trend direction shown in agent analytics: **improving** when the recent average is more than 0.5 points above the earlier average, **declining** when more than 0.5 below, otherwise **stable**.
 
 ---
 
-## ⚙️ Settings & Configuration
+## Evaluator Analytics tab
 
-### User Preferences
+### Filters card
+- **Search evaluators…**
+- Sort: **Most Evaluations**, **Least Evaluations**, **Highest Average**, **Lowest Average**, **Name (A-Z)**, **Name (Z-A)**
+- **Min evaluations** threshold
+- **Date Range** + **Apply Filters**
+- **Show Biased Only** switch
+- **Export** (CSV / Excel)
 
-#### Display Settings
-- **Theme**: Light/Dark mode toggle
-- **Date Range**: Filter data by time period
+### Summary cards
+**Total Evaluators**, **Team Average Score**, **Biased Evaluators** (with the ±2.5 pts threshold), **Avg Frequency** (evaluations per day).
 
-### Project Settings (Admin Only)
+### Bias detection
+An evaluator is flagged when their average differs from the team average by more than **2.5 points**: **Lenient Evaluator** (higher) or **Strict Evaluator** (lower); otherwise **Balanced Evaluator**. The Bias Detection card lists lenient and strict evaluators separately.
 
-#### Available Admin Settings
-**Administrators can manage:**
-1. **Project Access Control** - Add/remove allowed projects
-2. **Evaluator Name Management** - Override displayed names (manual mapping coexists with auto-resolved names)
-3. **Coverage Targets** - Set evaluation coverage goals
+### Evaluator Scoring cards and detail sheet
+Click an evaluator card to open the detail sheet with tabs **Overview** (Overall Average, Total Evaluations, Activity Period), **Criteria** (per-criterion averages), **Agents** (how this evaluator scores each agent – the evaluator/agent matrix), and **Trends** (daily average scores across all of this evaluator's evaluations by ticket created date – the card subtitle says "last 30 days" but no 30-day cut-off is applied). The **Evaluated Tickets** table in the sheet lists the evaluator's tickets with feedback; users with the **Delete Evaluations** permission see a **Delete Evaluation** column to remove *all* evaluations of a ticket after a confirmation dialog ("This action cannot be undone").
 
-#### Permission Requirements
-**Based on Jira permissions:**
-- **View analytics**: Browse Projects permission
-- **Create/edit evaluations**: Edit Issues permission
-- **Admin functions**: Administer Projects permission
-
----
-
-## 🔍 Filtering Data
-
-### Available Filters
-**Filter analytics by:**
-- Date range
-- Evaluator
-
-### Advanced Filters
-Advanced filter combinations and saved filters are not available.
+### Missing Evaluations
+Pick a date range and click **Load**. The table lists tickets in a *Done* status category, created in the range, that have no evaluation (up to 500). Columns: **Ticket**, **Summary**, **Priority**, **Assignee**, **Days Since Resolved** (shown in red after 7 days), **Actions** and **Remove**; sortable by ticket, priority and days; 10/20/50/100 rows per page.
+- **Evaluate Now** opens the ticket in Jira so you can evaluate it from the issue panel.
+- **Remove** hides a ticket from the list and from coverage totals (the choice is remembered site-wide for all users of the app; the issue panel shows a note on such tickets but still allows evaluation).
 
 ---
 
-## 📱 Mobile Compatibility
+## Advanced Analytics tab
 
-### Responsive Design
-The app works on mobile devices with:
-- Responsive layouts that adapt to screen size
-- Touch-friendly buttons and controls
-- Scrollable tables and charts
-- Mobile-optimized navigation
+### Controls
+**Date Range** (defaults to the last 30 days), **Export Format** (Excel / CSV), **Apply Filters**, **Export**, **Refresh** (recomputes; results are otherwise served from cache for up to two hours).
 
----
+Unlike the other tabs, the date range here filters evaluations by their **evaluation date**, not by the ticket's created date; coverage additionally uses the ticket's **resolution date**. Select the export format explicitly before clicking **Export**: the control displays *Excel* first, but the export runs as CSV until a format has been chosen.
 
-## 🔐 Security Features
+### Quick stats
+- **Coverage Rate** – evaluated share of resolved tickets vs the configured **Target**
+- **Trend Analysis** – **Short Term / Medium Term / Long Term**, each *improving*, *stable* or *declining*
+- **Evaluation Volume** – evaluations in the period and approximate evaluations per day
 
-### Data Protection
-- Encrypted storage
-- Secure transmission
-- Access logging
-- Session management
+### Detail tabs
+| Tab | Cards |
+|-----|-------|
+| **Coverage** | Overall Coverage Analysis, Coverage by Ticket Type, Coverage by Priority, Sampling Effectiveness (bias indicators and recommendations) |
+| **Trends & Capacity** | Trend Analysis, Capacity Analysis, Warnings & Recommendations |
+| **Complexity** | Complexity by Ticket Type, Complexity by Priority |
+| **Distribution** | Score Distribution Histogram, Normal Distribution Comparison (Bell Curve), Outlier Detection (click an outlier to open the ticket) |
 
-### Activity Tracking
-**The app tracks:**
-- All evaluations created
-- Evaluation edits
-- Settings changes (project access, evaluator names, coverage targets)
+Trend Analysis compares evaluations from the last 7 / 30 / 90 days (*improving* / *stable* / *declining*). Capacity Analysis uses a fixed optimal capacity of 10 evaluations per day; Warnings flag declining performance, more than 15 evaluations per day, or a recent average below 6. Outliers are scores more than two standard deviations from the mean.
 
-**Note:** Detailed audit logging is not currently implemented in the UI.
+Coverage is calculated from tickets by **resolution date**; coverage targets come from **Settings → Coverage Targets** (default overall 75 %; by priority Highest 100, High 100, Medium 50, Low 30, Lowest 20).
 
 ---
 
-## 🎨 Customization
+## Metrics tab (administrators)
 
-### Available Customizations
-**Users can customize:**
-- Theme (Light/Dark mode)
-- Date range filters
-- Export format preferences
-- Sort order in tables
+The **Evaluation Criteria** editor:
+- **Add Criteria** creates a new entry ("New Criteria") you can then **Edit**.
+- For each criterion: **Name**, **Description**, **Default Value (1-10)**, **Required** switch; arrows reorder; the trash icon removes. The **Required** flag is informational only – the evaluation form always shows every criterion with a value, so nothing is enforced by it.
+- **Save Changes** writes the list. Criteria are shared by all enabled projects.
 
----
-
-## 💡 Pro Tips
-
-### Navigation Tips
-- Use tabs to navigate between dashboards
-- Click on charts for detailed views
-- Use filters to focus on specific data
-- Export data for offline analysis
-
-### Advanced Features
-1. **Interactive Charts**: Click on bar charts to see detailed ticket lists
-2. **Data Export**: Export to CSV or Excel for further analysis
-3. **Performance Tracking**: Monitor trends over time
-4. **Coverage Analysis**: Track evaluation coverage rates
-
-### Best Practices
-1. **Regular evaluations**: Daily is better than weekly batches
-2. **Consistent standards**: Use evaluation guides
-3. **Actionable feedback**: Be specific and constructive
-4. **Data hygiene**: Regular cleanup and validation
-5. **Team calibration**: Monthly alignment sessions
+Only Jira administrators can save changes to existing criteria. Removing a criterion does not delete historical scores; old evaluations keep their stored values and the criterion id is shown where the name is no longer known.
 
 ---
 
-*For more specific workflows, see our [Workflows Guide](./Workflows.md)*
+## Settings tab (administrators)
 
+Three sub-tabs:
+
+### Project Access & Recent Changes
+- Inside a project's dashboard this sub-tab shows **Current Project Access** for that project only, with a remove action. To **add** projects (search by name or key, **Add Project**) use the project allow-list on the landing page (**Settings** / **Configure Projects**), where the full **Allowed Projects** list is shown.
+- **Recent Changes** shows the last 10 add/remove actions with who did it and when.
+- Only enabled projects can be opened, evaluated or searched by the app.
+
+### Roles & Access
+- **Create Role** – name plus a set of permissions: Dashboard Access, Analytics Dashboard, Agent Performance, Evaluator Analytics, Advanced Analytics, Metrics, Settings, Evaluate Tickets, Delete Evaluations.
+- **Existing Roles** table with edit (**Edit Role Permissions**) and delete actions.
+- **Add Users** – search users in the project, pick roles, **Add**. **Project Users** table lists assignments with a remove action.
+- Audit list with a date range and **Load** showing role creation/deletion, users added/removed and evaluation deletions.
+- Roles are defined **per project**. Jira administrators do not need a role.
+
+### Coverage Targets
+**Overall Target (%)** and per-priority targets used by Advanced Analytics → Coverage. **Save** is admin-only.
+
+---
+
+## Data export
+
+Available on the Analytics, Agent Performance, Evaluator Analytics and Advanced Analytics tabs, plus a per-table export in ticket detail sheets.
+
+| Dashboard | Excel worksheets |
+|-----------|------------------|
+| Analytics | Overview, Daily Evaluations, Score Distribution, Detailed Evaluations |
+| Agent Performance | Summary, Agent Performance, Top Performers |
+| Evaluator Analytics | Summary, Evaluator Performance, Missing Evaluations (when loaded) |
+| Advanced Analytics | Complexity, Coverage, Forecast, Patterns, Distribution (the *Patterns* sheet always reads "N/A" – peak-hour analysis is no longer computed) |
+
+CSV exports are flat tables in UTF-8. In CSV files, cell values beginning with `=`, `+`, `-` or `@` are prefixed with an apostrophe to prevent spreadsheet formula injection; Excel files write values as typed text cells. Exports always reflect the current filters. The Agent Performance export's "Team Average Score" is a plain mean across agents, whereas the on-screen **Average Score** card is weighted by evaluation count, so the two can differ. PDF and JSON exports are not available.
+
+---
+
+## Filtering
+
+| Where | Filters |
+|-------|---------|
+| Analytics Dashboard | Date range |
+| Agent Performance | Search, sort, performance band, date range |
+| Evaluator Analytics | Search, sort, minimum evaluations, biased-only, date range |
+| Advanced Analytics | Date range |
+| Missing Evaluations | Date range |
+
+There are no saved filters, no per-evaluator filter on the Analytics Dashboard, and no keyboard shortcuts.
+
+---
+
+## Security and privacy features (user-visible)
+
+- Access to each tab and action is controlled by roles set by Jira administrators and enforced by the backend.
+- Project access changes and role changes are recorded and visible under Settings.
+- Only evaluation scores, feedback, your Atlassian account id and display name are stored by the app; it never writes to Jira issues.
+
+See [Technical → Security](../Technical/Security.md) for details.
+
+---
+
+## Not included (to avoid confusion)
+
+The app does not provide: evaluation editing in place (save a new evaluation instead), automation or alert rules, scheduled e-mail reports, PDF export, a Help menu, keyboard shortcuts, a mobile-specific layout (the UI is responsive but designed for desktop Jira), or a public REST API.
+
+---
+
+*For team processes, see the [Workflows Guide](./Workflows.md). For questions, see the [FAQ](./FAQ.md).*

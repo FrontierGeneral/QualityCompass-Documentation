@@ -2,347 +2,384 @@
 
 ## Overview
 
-The Quality Scorecard for Jira is built on the Atlassian Forge platform, providing a comprehensive quality assurance evaluation system integrated directly into Jira. This document describes the technical architecture, system components, and design decisions.
+Quality Scorecard for Jira is an Atlassian Forge app that adds a ticket-quality evaluation workflow and analytics dashboards to Jira Cloud. This document describes the actual architecture of the shipped app: Forge modules, the React frontend, the resolver backend, storage layout, caching, authorization and the scheduled Personal Data Reporting job.
 
 **Quick Links:**
-- [Installation Guide](./Installation.md) - Get started with deployment
-- [API Reference](./API-Reference.md) - Detailed API documentation
-- [Security Documentation](./Security.md) - Security architecture and compliance
-- [Development Guide](./Development.md) - Development setup and practices
+- [Installation Guide](./Installation.md) - Deployment and first-run configuration
+- [API Reference](./API-Reference.md) - Resolver functions the frontend can invoke
+- [Security Documentation](./Security.md) - Authorization model, validation, audit logging, GDPR
+- [Development Guide](./Development.md) - Local development workflow
 
 ## System Architecture
 
 ### High-Level Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        Jira Cloud                           │
-│  ┌─────────────────────────────────────────────────────┐  │
-│  │              Forge Platform Runtime                  │  │
-│  │  ┌─────────────────────────────────────────────┐   │  │
-│  │  │          Quality Scorecard for Jira                        │   │  │
-│  │  │  ┌──────────────┐  ┌──────────────────┐   │   │  │
-│  │  │  │   Frontend   │  │    Backend       │   │   │  │
-│  │  │  │   (React)    │  │   (Resolvers)    │   │   │  │
-│  │  │  └──────────────┘  └──────────────────┘   │   │  │
-│  │  │           │               │                │   │  │
-│  │  │           └───────┬───────┘                │   │  │
-│  │  │                   │                        │   │  │
-│  │  │         ┌─────────▼─────────┐             │   │  │
-│  │  │         │   Forge Storage   │             │   │  │
-│  │  │         └───────────────────┘             │   │  │
-│  │  └─────────────────────────────────────────────┘   │  │
-│  └─────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                           Jira Cloud                             │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │                  Forge Platform Runtime                    │  │
+│  │                                                            │  │
+│  │   jira:globalPage ──┐      jira:issuePanel ──┐             │  │
+│  │   (dashboard)       │      (evaluation form) │             │  │
+│  │          ┌──────────▼────────────────────────▼──────────┐  │  │
+│  │          │        React frontend (Custom UI, dist/)     │  │  │
+│  │          │  @forge/bridge invoke() ──► resolver function│  │  │
+│  │          └──────────────────────┬───────────────────────┘  │  │
+│  │                                 │                          │  │
+│  │          ┌──────────────────────▼───────────────────────┐  │  │
+│  │          │   Forge functions (Node.js 22)               │  │  │
+│  │          │   • resolver            (src/index.js)       │  │  │
+│  │          │   • personalDataReporter (scheduledTrigger)  │  │  │
+│  │          └──────────┬───────────────────────┬───────────┘  │  │
+│  │                     │                       │              │  │
+│  │          ┌──────────▼──────────┐  ┌─────────▼──────────┐   │  │
+│  │          │  Forge KV Storage   │  │  Jira REST API v3  │   │  │
+│  │          │  (storage:app)      │  │  asUser / asApp    │   │  │
+│  │          └─────────────────────┘  └────────────────────┘   │  │
+│  └────────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────┘
 ```
+
+### Forge Modules (manifest.yml)
+
+| Module | Key | Purpose |
+|--------|-----|---------|
+| `jira:globalPage` | `ticket-evaluation-dashboard` | The app's main page (Jira **Apps** menu). Hosts the project landing page and the admin dashboard. |
+| `jira:issuePanel` | `ticket-evaluation-panel` | Issue-view panel that hosts the evaluation form and evaluation history. |
+| `scheduledTrigger` | `personal-data-reporting-weekly` | Weekly job (`interval: week`) that runs the Personal Data Reporting handler. |
+| `function` | `resolver` → `index.handler` | All `invoke()` resolvers (`src/index.js`). |
+| `function` | `personalDataReporter` → `personalDataReporting.handler` | Personal Data Reporting job (`src/personalDataReporting.js`). |
+
+Both UI modules use Custom UI resources that point at the Vite build output (`resources[].path: dist`).
+
+Runtime and permissions:
+
+```yaml
+app:
+  runtime:
+    name: nodejs22.x
+  licensing:
+    enabled: true
+
+permissions:
+  scopes:
+    - read:jira-work
+    - storage:app
+    - read:jira-user
+    - report:personal-data
+```
+
+The app does **not** request `write:jira-work`; it never modifies Jira issues. Evaluations live only in Forge storage.
 
 ## Technology Stack
 
 ### Frontend
-- **Framework**: React 18.x with TypeScript
-- **Build Tool**: Vite
-- **UI Components**: 
-  - shadcn/ui (Radix UI primitives)
-  - Tailwind CSS for styling
-- **State Management**: React Context API
-- **Data Visualization**: Recharts
-- **Date Handling**: date-fns
-- **Excel Export**: exceljs
-- **Workers**: Web Worker for CPU-heavy advanced analytics
-- **Persistent Caching**: IndexedDB (SWR pattern)
+- **Framework**: React 18 with TypeScript, bundled by Vite 6 (`@vitejs/plugin-react-swc`)
+- **UI**: shadcn/ui on Radix UI primitives, Tailwind CSS, lucide-react icons
+- **Routing / state**: `react-router-dom`, React Context (`ProjectContext`, `ThemeContext`, `JiraContext`)
+- **Charts**: Recharts
+- **Dates**: date-fns, react-day-picker
+- **Exports**: ExcelJS (multi-worksheet `.xlsx`) and hand-built CSV
+- **Workers**: a Web Worker (`src/services/workers/advancedAnalyticsWorker.ts`) computes advanced analytics off the main thread
+- **Caching**: in-memory TTL cache (`cacheService.ts`) plus an IndexedDB persisted cache (`persistedCache.ts`, database `qc-persisted-cache`) used in a stale-while-revalidate pattern
+- **Forge bridge**: `@forge/bridge` `invoke()` wrapped by `services/utils/api.ts`
 
-### Backend
-- **Runtime**: Forge Platform (Node.js-based)
-- **Language**: JavaScript (ES6+)
-- **API Integration**: Forge API for Jira interaction
-- **Storage**: Forge Storage API
-- **Authentication**: Forge authentication (api.asUser, api.asApp)
-- **Request Management**: In-flight request deduplication + client concurrency limiter
-
-### Security
-- **Input Validation**: Custom validation middleware
-- **Rate Limiting**: In-memory rate limiter
-- **CSP**: Content Security Policy configured
-- **Audit Logging**: Custom audit service
-- **GDPR Compliance**: Built-in data management features
+### Backend (Forge functions)
+- **Runtime**: Forge, Node.js 22 (`nodejs22.x`)
+- **Language**: JavaScript (CommonJS)
+- **Libraries**: `@forge/resolver`, `@forge/api` (`api.asUser()`, `api.asApp()`, `route`, `storage`, `privacy.reportPersonalData`)
+- **Storage**: Forge Key-Value storage (`storage:app`)
 
 ## Core Components
 
-### 1. Frontend Components
+### 1. Frontend
 
-#### Main Views
-- **AdminView**: Central dashboard for administrators
-- **AnalyticsDashboard**: Comprehensive analytics and reporting
-- **AgentPerformanceDashboard**: Agent-specific performance metrics
-- **EvaluatorAnalyticsDashboard**: Evaluator performance analysis
-- **AdvancedAnalyticsDashboard**: Advanced analytics with predictions
+#### Pages (`src/pages`)
+| Page | Route / host | Description |
+|------|--------------|-------------|
+| `Index.tsx` | global page entry | Decides which view to render based on the Forge module context. |
+| `ProjectLandingPage.tsx` | global page | Lists the projects the user may open (allow-list from Settings); auto-selects when only one project is allowed. |
+| `AdminView.tsx` | global page | Tabbed dashboard: **Analytics Dashboard**, **Agent Performance**, **Evaluator Analytics**, **Advanced Analytics**, **Metrics**, **Settings**. Tabs are shown only if the user holds the matching `tab.*` permission. |
+| `IssuePanelView.tsx` | issue panel | Hosts `EvaluationForm` and `EvaluationHistory` for the current issue. |
+| `NotFound.tsx` | fallback | 404 page. |
 
-#### Key Services
-```typescript
-// Service Layer Architecture
-├── analyticsService.ts      // Core analytics calculations
-├── exportService.ts         // Export functionality (CSV, Excel)
-├── advancedAnalyticsService.ts // Advanced analytics and ML features
-├── cacheService.ts          // Client-side caching
+#### Feature components (`src/components`)
+- `evaluation/EvaluationForm.tsx` – per-criterion sliders (0–10, step 1, default 5), optional feedback, **Save Evaluation** and **View History**.
+- `evaluation/EvaluationHistory.tsx` – dialog listing previous evaluations for the issue with per-criterion detail.
+- `admin/AnalyticsDashboard.tsx` – date-range filtered KPIs, charts and a paginated raw-data table; CSV/Excel export.
+- `admin/AgentPerformanceDashboard.tsx` (+ `agent-performance/*`) – per-assignee ("agent") scores, cards, detail modal with charts and evaluated tickets.
+- `admin/EvaluatorAnalyticsDashboard.tsx` (+ `evaluator-analytics/*`) – per-evaluator scoring, bias detection, evaluator detail sheet (with evaluation deletion for users holding `evaluation.delete`), and the **Missing Evaluations** table.
+- `admin/AdvancedAnalyticsDashboard.tsx` (+ `advanced-analytics/*`) – coverage, trends & capacity, complexity and distribution analysis.
+- `admin/CriteriaManager.tsx` – **Metrics** tab; add/edit/reorder/remove evaluation criteria.
+- `admin/settings/ProjectAccessCard.tsx` – project allow-list and its "Recent Changes" audit list.
+- `admin/settings/RolesAccessManager.tsx` – project roles, permission assignment, user assignment, role audit log.
+- `admin/settings/CoverageTargetsCard.tsx` – overall and per-priority coverage targets.
+- `shared/TicketDetailSheet.tsx` – drill-down sheet opened from charts/tables; links to the Jira issue.
+
+> `admin/settings/EvaluatorNameManager.tsx`, `admin/settings/SmartEvaluatorSync.tsx` and `admin/analytics/{OverviewTab,AssigneeTab,CriteriaTab,DataTab}.tsx` exist in the source tree but are **not mounted** by any page. Treat them as legacy code.
+
+#### Services (`src/services`)
+```
+services/
+├── evaluationService.ts        # Save/load evaluations (global + project-scoped keys), history
+├── criteriaService.ts          # Load/save evaluation criteria (seeds defaults on first run)
+├── ticketService.ts            # Jira issue lookups via searchIssues / getTicketMetadataBatch
+├── analyticsService.ts         # Analytics, agent performance, evaluator analytics, missing evaluations
+├── advancedAnalyticsService.ts # Coverage / trends / complexity / distribution (uses worker + persisted cache)
+├── exportService.ts            # CSV and Excel (ExcelJS) export, CSV-injection sanitisation
+├── accessControlService.ts     # Thin wrapper over the roles/permissions resolvers
+├── userNameService.ts          # Display-name resolution (manual mapping > Jira lookup > cache)
+├── cacheService.ts             # In-memory TTL cache (SHORT 1m, MEDIUM 5m, LONG 30m, VERY_LONG 2h)
+├── auditService.js             # Backend audit logging (used by src/index.js)
+├── gdprService.js              # Backend erasure helper used by Personal Data Reporting
+├── personalDataIndex.js        # Backend index of account IDs the app has stored
+├── workers/advancedAnalyticsWorker.ts
 └── utils/
-    └── storageUtils.ts      // Storage utilities
+    ├── api.ts                  # invoke() wrapper: concurrency limiter (8), in-flight dedupe, retry
+    ├── forge-bridge.ts         # Bridge access helper
+    ├── persistedCache.ts       # IndexedDB cache
+    ├── storageUtils.ts         # Storage key helpers
+    ├── jiraUrl.ts              # Build/open Jira issue links (uses getJiraBaseUrl)
+    ├── mockData.ts             # DEFAULT_CRITERIA and dev mock data
+    └── logger.ts
 ```
 
-### 2. Backend Resolvers
+### 2. Backend Resolvers (`src/index.js`)
 
-Located in `src/index.js`, the resolvers handle:
+All frontend calls go through `invoke('<resolverName>', payload)`. The resolver file defines 35 functions grouped as:
 
-```javascript
-// Core Resolver Functions
-resolver.define('makeApiRequest', async (req) => {});
-resolver.define('getIssue', async (req) => {});
-resolver.define('searchIssues', async (req) => {});
-resolver.define('getStorageValue', async (req) => {});
-resolver.define('setStorageValue', async (req) => {});
-resolver.define('deleteStorageValue', async (req) => {});
-resolver.define('batchGetUsers', async (req) => {});
-resolver.define('getUser', async (req) => {});
-resolver.define('setEvaluatorName', async (req) => {});
-```
+- **Jira data**: `getCurrentUser`, `getIssue`, `searchIssues`, `getTicketMetadataBatch`, `getJiraBaseUrl`, `searchProjects`, `searchUsers`, `getUser`, `batchGetUsers`
+- **Storage (allow-listed keys)**: `getStorageValue`, `setStorageValue`, `deleteStorageValue`
+- **Evaluations**: `getFilteredEvaluations`, `deleteTicketEvaluations`
+- **Evaluator names**: `setEvaluatorName`, `removeEvaluatorName`, `clearEvaluatorNameCache`, `migrateEvaluatorNames`, `getEvaluatorNameMapping`
+- **Project access**: `getAllowedProjects`, `setAllowedProjects`, `checkAdminPermission`
+- **Coverage targets**: `getCoverageTargets`, `setCoverageTargets`
+- **Roles & permissions**: `getPermissionCatalogue`, `getProjectRoles`, `upsertProjectRole`, `deleteProjectRole`, `assignUserRoles`, `bulkAssignUserRoles`, `getMyPermissions`, `canAccess`, `getRoleAuditLog`, `getUserAssignments`, `removeUserAssignment`
 
-### 3. Data Models
+See the [API Reference](./API-Reference.md) for payloads, responses and authorization rules. There is no generic "make any Jira request" resolver; every Jira call is a purpose-built, validated resolver.
 
-#### Evaluation Schema
+### 3. Scheduled Function (`src/personalDataReporting.js`)
+
+Runs weekly. It reads the app's personal-data index (`personal-data-account:<accountId>` records maintained by `personalDataIndex.js`), calls `privacy.reportPersonalData()` from `@forge/api`, and:
+- for accounts reported as **closed**, invokes `gdprService.deleteUserData()` to erase the account's data;
+- for accounts reported as **updated**, refreshes cached display names.
+
+This is what the `report:personal-data` scope is for. See [Security → Personal Data Reporting](./Security.md#personal-data-reporting-gdpr).
+
+### 4. Data Models
+
+#### TicketEvaluation (`src/types/index.ts`)
 ```typescript
 interface TicketEvaluation {
-  ticketId: string;
-  ticketKey: string;
-  evaluatorId: string;
+  id: string;                      // unique evaluation id
+  ticketId: string;                // Jira issue id
+  ticketKey: string;               // e.g. "PROJ-123"
+  evaluatorId: string;             // Atlassian accountId of the evaluator
   evaluatorDisplayName?: string;
-  averageScore: number;
-  criteria: Record<string, number>;
-  feedback?: string;
-  timestamp: string;
-  projectKey?: string;
-  priority?: string;
-  issueType?: string;
-  status?: string;
-  assigneeId?: string;
-  assigneeDisplayName?: string;
+  timestamp: string;               // ISO 8601
+  criteria: Record<string, number>;// criterionId -> score (0-10)
+  averageScore: number;            // mean of criteria scores
+  feedback?: string;               // optional free text
+  version?: number;                // optimistic-concurrency counter
 }
 ```
+Ticket metadata (priority, issue type, status, assignee, created/resolved dates) is **not** stored on the evaluation; dashboards fetch it from Jira at read time via `getTicketMetadataBatch` and join on `ticketKey`.
 
-#### Storage Structure (actual keys)
-```javascript
-// Forge Storage Keys (used by app)
-'ticket-evaluations'                 // Global list of evaluations
-'project-evaluations-<PROJECT_KEY>'  // Project-scoped evaluations
-'evaluation-criteria'                // Criteria configuration
-'evaluator-name-mapping'             // Manual evaluator name overrides
-'user-displayname-cache'             // Auto-resolved display names cache
-'selected-project'                   // Last selected project key per user
-'coverage-targets'                   // Admin-configured coverage targets
+#### EvaluationCriteria
+```typescript
+interface EvaluationCriteria {
+  id: string;
+  name: string;
+  description: string;
+  required: boolean;
+  defaultValue: number;            // 1-10, default 5
+}
 ```
+Criteria are stored as an **ordered array**. Default set (8 criteria): Clarity of Description, Completeness of Requirements, Reproducibility (for bugs), Technical Documentation, Test Coverage, Code Quality, Solution Efficiency, Adherence to Standards. Weights are not supported; all criteria contribute equally to `averageScore`.
+
+#### Storage Keys (Forge KV)
+
+| Key | Content | Access path |
+|-----|---------|-------------|
+| `ticket-evaluations` | Global array of all evaluations | generic read; write requires `ticket.evaluate` |
+| `project-evaluations-<KEY>` | Project-scoped array of evaluations | generic read (project must be allowed); write requires `ticket.evaluate` |
+| `evaluation-criteria` | Ordered criteria array | generic read; first seed by anyone, edits admin-only |
+| `coverage-targets` | `{ overallTarget, byPriorityTargets }` | dedicated resolvers (set = admin) |
+| `theme-preference` | Theme choice | generic read/write |
+| `selected-project` | Last selected project | generic read/write/delete |
+| `user-displayname-cache` | accountId → display name | generic read/write |
+| `evaluator-name-mapping` | Manual evaluator name overrides | generic read; write via `setEvaluatorName` (admin) |
+| `evaluator-name-removed` | IDs whose override was removed | backend only |
+| `removed-missing-evaluations` | Tickets hidden from the Missing Evaluations table | generic read/write |
+| `allowed-projects`, `allowed-projects-audit` | Project allow-list and its change log | dedicated resolvers (set = admin) |
+| `roles:<KEY>`, `role-assignments:<KEY>`, `role-audit:<KEY>` | RBAC definitions, assignments and audit trail | dedicated resolvers (`tab.settings` / admin) |
+| `audit-log:<ts>:<id>`, `audit-index:<date>`, `security-alert:<ts>` | Backend audit events | backend only |
+| `personal-data-account:<accountId>` | Personal-data index record | backend only |
+| `gdpr-consent:<accountId>` | Consent record (helper exists, not used by any UI) | backend only |
+| `user-cache-<id>`, `user-cache:<id>`, `evaluator-name:<id>`, `assignable-users-cache:<KEY>` | Server-side caches | backend only |
+| `settings-admin-group` | Optional Jira group name granting admin rights (no UI; set manually) | backend only |
+
+Keys outside the generic allow-lists are rejected by `getStorageValue` / `setStorageValue` / `deleteStorageValue` and the attempt is logged as `ACCESS_DENIED`.
 
 ## Data Flow
 
-### 1. Evaluation Creation Flow
+### 1. Evaluation Creation
 ```
-User Action → Frontend Form → Validation → Forge Resolver 
-→ Storage API → Cache Invalidation → UI Update
+Issue panel → EvaluationForm (sliders + feedback)
+  → evaluationService.saveEvaluation()
+      → invoke('setStorageValue', { key: 'ticket-evaluations', value: [...all, new] })
+      → invoke('setStorageValue', { key: 'project-evaluations-<KEY>', value: [...project, new] })
+  → backend checks ticket.evaluate for the ticket's project, records accountIds in the
+    personal-data index, writes to Forge storage
+  → cache invalidation → toast "Evaluation Saved"
+```
+Every save creates a **new** `TicketEvaluation` record; there is no in-place edit. Dashboards use the latest evaluation per ticket.
+
+### 2. Analytics Generation
+```
+Dashboard tab → analyticsService / advancedAnalyticsService
+  → in-memory cache? → IndexedDB persisted cache? (serve stale, refresh in background)
+  → invoke('getStorageValue' | 'getFilteredEvaluations')          # evaluations
+  → invoke('searchIssues' | 'getTicketMetadataBatch')             # Jira metadata (status, priority, type, assignee)
+  → join on ticketKey → compute (Web Worker for advanced analytics) → render (Recharts)
 ```
 
-### 2. Analytics Generation Flow
+### 3. Export
 ```
-Dashboard Request → Cache Check → Data Fetch from Storage 
-→ Analytics Calculation → Data Transformation → UI Render
+Export button → exportService.export*(format)
+  → CSV: build rows, sanitise cell values (CSV-injection prefixing), Blob download
+  → Excel: ExcelJS workbook with multiple worksheets, Blob download
 ```
-
-### 3. Export Flow
-```
-Export Request → Data Collection → Format Transformation 
-→ File Generation → Download Trigger
-```
+File names follow `<dashboard>-<projectKey>-<yyyy-MM-dd>.csv|xlsx`.
 
 ## Integration Points
 
-### Jira REST API Integration
-- **Issue Retrieval**: `/rest/api/3/issue/{issueIdOrKey}`
-- **Search**: `/rest/api/3/search` (supports `startAt` pagination and `nextPageToken` where available)
-- **User Management**: `/rest/api/3/user`
-- **Project Access**: `/rest/api/3/project`
+### Jira REST API v3 (via `@forge/api`)
+| Endpoint | Used by | Auth |
+|----------|---------|------|
+| `GET /rest/api/3/issue/{idOrKey}` | `getIssue` | asUser |
+| `POST /rest/api/3/search` (falls back to `POST /rest/api/3/search/jql` with `nextPageToken` on HTTP 410) | `searchIssues` (asUser), `getTicketMetadataBatch` (asApp, after a BROWSE_PROJECTS check as the user) | asUser / asApp |
+| `GET /rest/api/3/myself` | `getCurrentUser` | asUser |
+| `GET /rest/api/3/mypermissions?permissions=ADMINISTER` | `checkAdminPermission` | asUser |
+| `GET /rest/api/3/mypermissions?projectKey=...&permissions=BROWSE_PROJECTS` | `getTicketMetadataBatch` | asUser |
+| `GET /rest/api/3/user?accountId=...`, `GET /rest/api/3/user/search?accountId=...` | `getUser`, `batchGetUsers`, user caches, Personal Data Reporting | asApp |
+| `GET /rest/api/3/user/assignable/search?project=...`, `GET /rest/api/3/user/search?query=...` | `searchUsers` (24 h per-project cache) | asApp |
+| `GET /rest/api/3/project/{key}` | `getAllowedProjects` (avatar lookup) | asApp |
+| `GET /rest/api/3/project/search?expand=insight&maxResults=50` | `searchProjects` | asUser |
+| `GET /rest/api/3/serverInfo` | `getJiraBaseUrl` | asUser |
+| `privacy.reportPersonalData()` (Forge API) | `personalDataReporting.js` | app |
 
-### Forge Storage API
-- **Key-Value Storage**: For evaluations and configuration
-- **Batch Operations**: For performance optimization
-- **Query Operations**: For filtered data retrieval
+`searchIssues` always prefixes the JQL with `project in (<allowed projects>)`; if no projects are allowed it returns an empty result set.
 
-For detailed API documentation, see [API Reference](./API-Reference.md#storage-api-functions).
+## Authorization Model
 
-## Performance Considerations
+1. **Jira administrators** (users with the global `ADMINISTER` permission, or members of the optional `settings-admin-group` group) hold every permission in every project.
+2. Everyone else receives permissions from the **roles assigned to them in the current project** (Settings → Roles & Access).
+3. Permission catalogue: `dashboard.access`, `tab.analytics`, `tab.agentPerformance`, `tab.evaluatorAnalytics`, `tab.advancedAnalytics`, `tab.configuration` (Metrics tab), `tab.settings`, `ticket.evaluate`, `evaluation.delete`.
+4. Checks are enforced **server-side** in the resolvers (`computeEffectivePermissions`), not only in the UI.
 
-### Caching Strategy
-- **Client-side**: In-memory cache with TTL + IndexedDB persistent cache (SWR)
-- **Cache Keys**: Generated based on request parameters
-- **TTL Values (current)**:
-  - SHORT: 1 minute
-  - MEDIUM: 5 minutes
-  - LONG: 30 minutes
-  - VERY_LONG: 2 hours (advanced analytics)
-- **Persistent Cache**: Advanced analytics results persisted and refreshed in background
+Details: [Security Documentation](./Security.md#authentication--authorization).
 
-### Optimization Techniques
-1. **Batch API Calls**: Reduce network overhead
-2. **Lazy Loading**: Load data on demand
-3. **Memoization**: Cache computed values
-4. **Virtual Scrolling**: For large data sets
-5. **Debouncing**: For search and filter inputs
-6. **In-flight Request Deduplication**: Identical calls coalesce
-7. **Global Concurrency Limiter**: Max 8 Forge invocations at once
-8. **Adjacent Tab Prefetch Constraints**: Heavy tabs not prefetched in background
-9. **Worker Offload**: CPU-heavy analytics runs in Web Worker
+## Performance
 
-## Security Architecture
+### Caching
+| Layer | Location | TTLs |
+|-------|----------|------|
+| In-memory (`cacheService`) | browser tab | SHORT 1 min, MEDIUM 5 min, LONG 30 min, VERY_LONG 2 h |
+| Persisted (`persistedCache`, IndexedDB `qc-persisted-cache`) | browser profile | advanced analytics results (VERY_LONG), ticket metadata (LONG) |
+| Server caches | Forge storage | user info (`user-cache-*`, 1 h), assignable users per project |
 
-### Input Validation
-```javascript
-// Validation Pipeline
-Input → Sanitization → Type Checking → Range Validation 
-→ Pattern Matching → Business Logic Validation
-```
+### Request management (`services/utils/api.ts`)
+- Global concurrency limiter: at most **8** in-flight `invoke()` calls.
+- In-flight deduplication: identical calls share one promise.
+- `withRetry`: up to 3 attempts with **linear** back-off (`delay × attempt`). There is no special handling of HTTP 429; Forge/Jira platform limits apply.
+- Prefetch hooks (`usePrefetch`, `usePrefetchAdvancedAnalytics`) warm adjacent tabs; the heaviest computations run in the Web Worker.
 
-For complete security implementation, see [Security Documentation](./Security.md#input-validation).
+### Known limits
+- Evaluations are stored as whole JSON arrays per key, and Forge KV enforces a per-value size limit. At roughly 400–700 bytes per evaluation, a key holds on the order of a few hundred evaluations before writes start failing; the global `ticket-evaluations` key is hit first because it aggregates every project. See [Entity Storage Migration Plan](./Entity-Storage-Migration-Plan.md) for the proposed remedy.
+- Jira searches are capped per request (`maxResults` ≤ 100) and client code caps total issues fetched (e.g. 500 for the Missing Evaluations table).
 
-### Authentication Flow
-```
-User Request → Forge Context → Permission Check 
-→ Scoped API Access → Response
-```
+## Security Architecture (summary)
 
-### Data Protection
-- **At Rest**: Encrypted via Forge Storage
-- **In Transit**: HTTPS enforced
-- **Access Control**: Role-based permissions
-- **Audit Trail**: All modifications logged
+- **Input validation** (`src/validators/inputValidator.js`): JQL (≤ 5000 chars, forbidden `;`, `--`, `/*`, `\\`, control chars), project key `^[A-Z][A-Z0-9_-]{1,9}$`, issue id, account id `^[a-zA-Z0-9:_-]{1,255}$`, storage key `^[a-zA-Z0-9:_-]{1,200}$`, pagination (`startAt` 0–100000, `maxResults` 1–100).
+- **Authorization**: server-side permission checks and storage-key allow-lists (above).
+- **Audit logging** (`auditService.js`): `ACCESS_DENIED` and `PERMISSION_CHANGED` events are written to `audit-log:*`; RBAC changes also go to `role-audit:<KEY>`.
+- **Data protection**: Forge storage is encrypted at rest by Atlassian; all traffic is HTTPS; the app never stores emails, passwords or tokens.
+- **Personal data**: weekly Personal Data Reporting with automatic erasure of closed accounts.
 
-## Scalability Design
+Full details in [Security Documentation](./Security.md).
 
-### Horizontal Scaling
-- Stateless resolver design
-- Distributed caching capability
-- Async processing for heavy operations
+## Deployment
 
-### Vertical Scaling
-- Efficient memory usage
-- Optimized database queries
-- Minimal computational overhead
-
-## Monitoring & Observability
-
-### Logging Strategy
-- **Error Logging**: Comprehensive error capture
-- **Audit Logging**: Security and compliance events
-- **Performance Logging**: Response time tracking
-- **Debug Logging**: Development environment only
-
-### Metrics Collection
-- API response times
-- Storage operation performance
-- User action tracking
-- Error rates and types
-
-## Deployment Architecture
-
-### Forge Deployment
 ```yaml
-# manifest.yml structure
-app:
-  id: ari:cloud:ecosystem::app/{app-id}
-  
+# manifest.yml (abridged; see repository for the full file)
 modules:
-  jira:projectPage:
-    - key: qa-app-project-page
+  jira:globalPage:
+    - key: ticket-evaluation-dashboard
       resource: main
-      resolver:
-        function: resolver
-        
+      resolver: { function: resolver }
+  jira:issuePanel:
+    - key: ticket-evaluation-panel
+      resource: issue-panel
+      resolver: { function: resolver }
+  scheduledTrigger:
+    - key: personal-data-reporting-weekly
+      function: personalDataReporter
+      interval: week
+  function:
+    - key: resolver
+      handler: index.handler
+    - key: personalDataReporter
+      handler: personalDataReporting.handler
 resources:
   - key: main
-    path: build
-    
-permissions:
-  scopes:
-    - read:jira-work
-    - write:jira-work
-    - storage:app
+    path: dist
+  - key: issue-panel
+    path: dist
 ```
 
-### Build Pipeline
-1. **Development**: Local development with tunnel
-2. **Build**: Vite production build (workers via `new URL('./worker.ts', import.meta.url)` and `vite.config.ts` `worker.format = 'es'`)
-3. **Deploy**: Forge deploy command
-4. **Verification**: Automated smoke tests
+Build pipeline:
+1. `npm run build` → Vite builds the Custom UI into `dist/` (workers created with `new Worker(new URL('./workers/advancedAnalyticsWorker.ts', import.meta.url), { type: 'module' })`; `vite.config.ts` sets `worker.format = 'es'`, `assetsInlineLimit = 0` for CSP compliance, and manual vendor chunks).
+2. `forge deploy -e <environment>` uploads `dist/` and the `src/*.js` functions.
+3. `forge install` / `forge install --upgrade` installs onto a site (required when scopes change).
 
-## Disaster Recovery
+Environments: `development`, `staging`, `production`. Production is the environment behind the Atlassian Marketplace listing.
 
-### Backup Strategy
-- **Data Backup**: Regular export of evaluations
-- **Configuration Backup**: Settings and criteria
-- **Recovery Time Objective**: < 4 hours
-- **Recovery Point Objective**: < 24 hours
+## Appendix: Repository Layout
 
-### Failover Procedures
-1. Forge platform handles infrastructure failover
-2. Application-level retry logic
-3. Graceful degradation for non-critical features
-
-## Future Architecture Considerations
-
-### Planned Enhancements
-- WebSocket support for real-time updates
-- Machine learning model integration
-- External API webhooks
-- Multi-region deployment
-- Advanced caching with Redis
-
-### Scalability Roadmap
-- Microservices architecture consideration
-- Event-driven processing
-- GraphQL API implementation
-- Containerization for local development
-
----
-
-## Appendix
-
-### File Structure
 ```
 quality-scorecard-for-jira/
+├── manifest.yml
+├── package.json                  # version 1.3.0
+├── vite.config.ts
+├── index.html
 ├── src/
-│   ├── index.js              # Forge resolvers
-│   ├── components/           # React components
-│   ├── services/            # Business logic
-│   ├── contexts/            # React contexts
-│   ├── hooks/               # Custom hooks
-│   ├── types/               # TypeScript definitions
-│   └── validators/          # Input validation
-├── build/                    # Frontend build output
-├── manifest.yml             # Forge configuration
-└── package.json            # Dependencies
+│   ├── index.js                  # Forge resolvers
+│   ├── personalDataReporting.js  # Scheduled trigger handler
+│   ├── main.tsx / App.tsx
+│   ├── pages/
+│   ├── components/
+│   ├── contexts/
+│   ├── hooks/
+│   ├── services/
+│   ├── types/
+│   ├── validators/
+│   ├── middleware/rateLimiter.js # legacy, not wired in
+│   └── utils/errorHandler.js     # legacy, not wired in
+├── dist/                         # build output (Forge resource)
+└── Documentation/                # developer copy of these docs
 ```
-
-### Key Design Decisions
-
-1. **Forge Platform**: Chosen for native Jira integration and security
-2. **React + TypeScript**: Type safety and component reusability
-3. **Vite**: Fast build times and modern tooling
-4. **ExcelJS**: Robust Excel generation without vulnerabilities
-5. **Context API**: Simple state management without external dependencies
 
 ## See Also
 
-- [Installation Guide](./Installation.md) - Setup and deployment instructions
-- [API Reference](./API-Reference.md) - Complete API documentation
-- [Development Guide](./Development.md) - Development workflow and standards
-- [Security Documentation](./Security.md) - Security measures and compliance
-- [Technical Troubleshooting](./Troubleshooting-Technical.md) - Common issues and solutions
+- [Installation Guide](./Installation.md)
+- [API Reference](./API-Reference.md)
+- [Development Guide](./Development.md)
+- [Security Documentation](./Security.md)
+- [Technical Troubleshooting](./Troubleshooting-Technical.md)
+- [Entity Storage Migration Plan](./Entity-Storage-Migration-Plan.md)
 
 ---
 
-*Last Updated: January 2025*
-
+*Last Updated: October 2026 — reflects app version 1.3.0 (production deployment 7.x)*

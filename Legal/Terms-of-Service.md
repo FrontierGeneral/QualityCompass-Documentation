@@ -1,8 +1,8 @@
 # Quality Scorecard for Jira — Provider-Specific Terms
 
 **Effective Date:** March 7, 2026
-**Last Updated:** March 7, 2026
-**Version:** 1.0
+**Last Updated:** October 25, 2026
+**Version:** 1.2
 
 ---
 
@@ -73,9 +73,10 @@ Pursuant to Section 3.2 of the Standard Agreement, Provider implements the follo
 ### 5.2 Application Security
 
 - Authentication is handled natively by the Atlassian Forge platform.
-- Role-based access control (RBAC) with per-project granularity.
+- Role-based access control (RBAC) with per-project granularity, enforced server-side in every backend function.
 - Input validation and sanitization on all user-supplied data.
-- Per-user, per-endpoint rate limiting.
+- Atlassian platform rate limits, client-side concurrency limiting and audit logging of denied access attempts.
+- Least-privilege API scopes: the Product reads Jira data and never writes to Jira issues.
 - No external data egress — the Product makes no outbound requests outside Atlassian's infrastructure.
 
 ### 5.3 Operational Security
@@ -115,14 +116,16 @@ Support does not cover:
 
 ### 6.3 Response Times
 
-| Severity | Description | Target Response |
-|----------|-------------|-----------------|
-| Critical | Product entirely unavailable | 24 hours |
-| High | Major feature non-functional | 48 hours |
-| Medium | Non-critical feature issue or degraded performance | 5 business days |
-| Low | General questions, minor issues, feature requests | 10 business days |
+Response and resolution targets are defined in the [Support Service Level Agreement](./Support-SLA.md), which forms part of these Terms. In summary:
 
-Response times are targets and not guaranteed service levels. Support is provided during business hours (Monday–Friday, 9:00–18:00 WET/WEST, excluding Portuguese public holidays).
+| Severity | Description | Initial Response | Target Resolution |
+|----------|-------------|------------------|-------------------|
+| Critical | Product unavailable or a core function broken for all users | 4 business hours | 24 business hours |
+| High | Major feature significantly impaired | 8 business hours | 3 business days |
+| Medium | Feature not working as expected, limited impact | 24 business hours | 10 business days |
+| Low | General questions, minor issues, feature requests | 48 business hours | Best effort |
+
+Response times are targets and not guaranteed service levels. Support is provided during business hours (Monday–Friday, 9:00–18:00 WET/WEST, excluding Portuguese public holidays). In case of conflict between this table and the Support SLA, the Support SLA prevails.
 
 ---
 
@@ -173,11 +176,11 @@ Evaluation data (scores, feedback, and associated metadata) created by Customer'
 
 ### 9.3 Data Export
 
-Customer may export evaluation data at any time through the Product's built-in export functionality, which supports Excel (XLSX) and PDF formats.
+Customer may export evaluation data at any time through the export functionality available in each analytics dashboard, which supports CSV and Excel (XLSX) formats.
 
 ### 9.4 Data Deletion
 
-Upon Customer's request, Provider will delete specific evaluation data or all Customer Data associated with a particular user. Customer administrators can also perform data deletion through the Product's GDPR compliance features.
+Upon Customer's request, Provider will delete specific evaluation data or all Customer Data associated with a particular user within 30 days. Customer administrators (and users holding the corresponding Product permission) can also delete a ticket's evaluations and remove role assignments directly in the Product. Uninstalling the Product deletes all Customer Data held in Forge storage.
 
 ### 9.5 Availability
 
@@ -223,4 +226,6 @@ These Provider-Specific Terms, together with the [Bonterms Standard End User Agr
 
 *These Provider-Specific Terms are provided as a legal framework. Nexus Frontier recommends that Customers consult their own legal counsel before agreeing to these terms.*
 
-*Document Version: 1.0 | Effective: March 7, 2026*
+**Change history:** 1.2 (October 25, 2026) — security measures and export/deletion terms aligned with the shipped Product (no PDF export, no per-user rate limiter, no self-service GDPR tooling); support response times aligned with the Support SLA. 1.1 (May 28, 2026) — rebrand to Quality Scorecard for Jira. 1.0 (March 7, 2026) — initial.
+
+*Document Version: 1.2 | Effective: March 7, 2026 | Last Updated: October 25, 2026*

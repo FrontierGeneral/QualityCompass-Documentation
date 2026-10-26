@@ -1,8 +1,8 @@
 # Quality Scorecard for Jira — Data Processing Agreement (DPA)
 
 **Effective Date:** March 7, 2026
-**Last Updated:** May 27, 2026
-**Version:** 1.1
+**Last Updated:** October 25, 2026
+**Version:** 1.3
 
 ---
 
@@ -69,13 +69,14 @@ Provider processes Personal Data solely on behalf of and under the documented in
 |---------------|--------|-------------------|
 | Jira Account ID | Jira Cloud API | Unique identification of users within evaluations, roles, and audit logs |
 | Display Name | Jira Cloud API | Human-readable identification of evaluators and agents in the UI and reports |
-| Email Address | Jira Cloud API | Fallback identification when Display Name is unavailable (not stored persistently) |
-| Avatar URL | Jira Cloud API | Display user profile images in the Product UI |
-| Group Memberships | Jira Cloud API | Determine administrator privileges |
-| Evaluation Authorship | Product-generated | Record which user created each evaluation (Account ID + Display Name) |
+| Email Address | Jira Cloud API | Read only as a last-resort fallback for the current user's own display name; never stored or displayed to others |
+| Avatar URL | Jira Cloud API | Display user profile images in the Product UI (not stored) |
+| Jira Permission Results | Jira Cloud API | Determine administrator privileges (global Administer Jira permission) and project browse rights |
+| Group Memberships | Jira Cloud API | Only when Customer configures an optional administrator group |
+| Evaluation Authorship and Feedback | Product-generated | Record which user created each evaluation (Account ID + Display Name) together with the free-text feedback they entered |
 | Role Assignments | Product-generated | Record which users are assigned to which roles per project |
-| Administrative Actions | Product-generated | Audit trail of who performed administrative actions and when |
-| GDPR Consent Records | Product-generated | Record user consent decisions and timestamps |
+| Administrative Actions | Product-generated | Audit trail of denied access attempts, role/permission changes, evaluation deletions, project access changes and personal-data erasures |
+| Display Name Caches | Product-generated | Account ID → Display Name caches (manual overrides and automatically resolved names) |
 | Personal Data Index | Product-generated | Atlassian Account IDs and last-updated timestamps for users whose data the Product stores. Reported weekly to Atlassian's Personal Data Reporting API so Atlassian can notify the Product when an account is closed or its profile is updated. |
 
 ### 4.4 Sensitive Data
@@ -109,9 +110,9 @@ Provider implements the following technical and organizational measures to prote
 | Encryption at Rest | AES-256 via Atlassian Forge infrastructure |
 | Encryption in Transit | TLS 1.2+ for all communications |
 | Access Control | Atlassian Forge native authentication; no separate credentials |
-| Authorization | Role-based access control (RBAC) with per-project granularity |
-| Input Validation | Validation and sanitization of all user inputs |
-| Rate Limiting | Per-user, per-endpoint rate limiting |
+| Authorization | Role-based access control (RBAC) with per-project granularity, enforced server-side; client storage access restricted to an allow-list of keys |
+| Input Validation | Backend validation of all resolver inputs (JQL, project keys, issue ids, account ids, storage keys, pagination) |
+| Abuse Protection | Atlassian platform rate limits plus client-side concurrency limiting and request de-duplication; denied access attempts are audited |
 | Network Isolation | No external data egress; all processing within Atlassian infrastructure |
 
 **Organizational Measures:**
@@ -141,11 +142,13 @@ Provider shall notify Customer before engaging any new Sub-processor by updating
 ### 5.5 Assistance with Data Subject Rights
 
 Provider shall assist Customer in responding to Data Subject requests by:
-- Providing built-in data export functionality (Right of Access, Right to Data Portability)
-- Providing built-in data deletion functionality (Right to Erasure)
-- Supporting data rectification through Jira profile updates (Right to Rectification)
+- Providing export functionality in the Product's dashboards (CSV/Excel) through which Customer administrators can extract evaluation data for a Data Subject (Right of Access, Right to Data Portability), and by compiling any additional Personal Data (audit entries, caches, assignments) on Customer's written request
+- Providing deletion functionality for Customer administrators (deletion of a ticket's evaluations; removal of role assignments) and performing complete erasure of a named Data Subject's Personal Data from all storage locations on Customer's written request, within 30 days (Right to Erasure)
+- Supporting data rectification through Jira profile updates and superseding evaluations (Right to Rectification)
 - Enabling access restriction through RBAC configuration (Right to Restriction)
-- Participating in Atlassian's Personal Data Reporting API: on a weekly schedule, the Product reports its Personal Data Index to Atlassian. When Atlassian indicates that a Data Subject's Atlassian account has been closed, the Product automatically erases that Data Subject's Personal Data from Forge Key-Value Storage. When Atlassian indicates that a Data Subject's profile has been updated, the Product refreshes its cached copy from Atlassian's user APIs.
+- Participating in Atlassian's Personal Data Reporting API: on a weekly schedule, the Product reports its Personal Data Index to Atlassian. When Atlassian indicates that a Data Subject's Atlassian account has been closed, the Product automatically erases that Data Subject's evaluations from the site-wide evaluation list and removes the related name override and index entry; residual references in project-scoped lists, role assignments, automatic name caches and audit entries are removed by Provider on request or upon uninstallation. When Atlassian indicates that a Data Subject's profile has been updated, the Product refreshes its cached display name from Atlassian's user APIs.
+
+The Product does not provide a self-service export or erasure function to individual end users; requests are routed through Customer's administrators.
 
 Provider shall promptly inform Customer if it receives a request directly from a Data Subject, without responding to the request unless authorized by Customer.
 
@@ -229,15 +232,16 @@ Provider maintains a record of processing activities carried out on behalf of Cu
 
 ### 10.1 During the Agreement
 
-Provider retains Personal Data for the retention periods specified in the Privacy Policy:
+The Product does not apply automatic time-based expiry to Personal Data. Personal Data is retained for the duration of the Agreement and is removed through the mechanisms below (see also the Privacy Policy, Section 7):
 
-| Data Category | Retention Period |
+| Data Category | Retained until |
 |---------------|-----------------|
-| Ticket Evaluations | 365 days |
-| Audit Logs | 90 days |
-| User Preferences | 730 days |
-| Analytics / Derived Data | 180 days |
-| Temporary / Cache Data | 7 days |
+| Ticket Evaluations | Deleted by an authorised Customer user, erased following Atlassian account closure, erased by Provider on Customer's request, or app uninstalled |
+| Role Definitions and Assignments | Changed by a Customer administrator or app uninstalled |
+| Audit Logs | App uninstalled (a 90-day automatic retention is planned but not yet enforced) |
+| Display Name Caches and Personal Data Index | Account closure, Provider erasure on request, or app uninstalled; server-side profile caches refresh after 1–24 hours |
+| Configuration and User Preferences | Changed by the user/administrator or app uninstalled |
+| Client-side cache data | 1 minute – 2 hours (browser) |
 
 ### 10.2 Upon Termination
 
@@ -245,7 +249,7 @@ Upon termination or expiration of the Agreement, Provider shall:
 - Within 60 days of Customer's request, delete or return all Personal Data processed under this DPA
 - Delete existing copies of Personal Data unless required by applicable law to retain them
 
-Deletion of Personal Data stored in Forge Key-Value Storage is handled through the Atlassian platform upon app uninstallation. Atlassian retains uninstalled-app data for up to 28 days as a soft-delete grace period (during which the data is inaccessible to the Product but recoverable if Customer reinstalls within 21 days); after 28 days the data is permanently deleted by the Atlassian platform. For data deletion prior to uninstallation, Customer may use the Product's built-in GDPR features or contact Provider.
+Deletion of Personal Data stored in Forge Key-Value Storage is handled through the Atlassian platform upon app uninstallation. Atlassian retains uninstalled-app data for up to 28 days as a soft-delete grace period (during which the data is inaccessible to the Product but recoverable if Customer reinstalls within 21 days); after 28 days the data is permanently deleted by the Atlassian platform. For data deletion prior to uninstallation, Customer may use the Product's administrator deletion functions or contact Provider.
 
 ---
 
@@ -287,7 +291,7 @@ This Annex describes the technical and organizational security measures implemen
 
 - Multi-tenant isolation provided by Atlassian Forge (data is isolated per app per site)
 - Input validation and sanitization prevent data corruption
-- Rate limiting prevents denial-of-service conditions
+- Atlassian platform rate limits and client-side concurrency limiting mitigate denial-of-service conditions
 - Atlassian infrastructure provides high availability and disaster recovery
 
 ### A.3 Measures for Ensuring the Ability to Restore Availability and Access to Personal Data
@@ -305,8 +309,8 @@ This Annex describes the technical and organizational security measures implemen
 ### A.5 Measures for User Identification and Authorization
 
 - Authentication handled natively by Atlassian Forge — users are authenticated via Atlassian SSO
-- Role-based access control (RBAC) with per-project granularity
-- Administrator verification via Jira group membership checks
+- Role-based access control (RBAC) with per-project granularity, enforced in every backend function
+- Administrator verification via Jira's global Administer Jira permission (optionally supplemented by a Customer-designated Jira group)
 - No separate user accounts or credentials required
 
 ### A.6 Measures for the Protection of Data During Transmission
@@ -328,13 +332,13 @@ This Annex describes the technical and organizational security measures implemen
 
 ### A.9 Measures for Ensuring Events Logging
 
-- Administrative actions are logged with user identity, timestamp, and event type
-- Audit logs are retained for 90 days
-- Security-critical events (access denied, data deletion, suspicious activity) are flagged with elevated severity
+- Denied access attempts, role/permission changes, evaluation deletions and personal-data erasures are logged with user identity, timestamp, and event type; project access changes are logged separately and shown in the Product
+- Audit entries are retained for the life of the installation (a 90-day automatic retention is planned)
+- Security-relevant events (access denied, data deletion) are flagged with elevated severity
 
 ### A.10 Measures for Ensuring System Configuration
 
-- App manifest (`manifest.yml`) enforces least-privilege API scopes (currently `read:jira-work`, `write:jira-work`, `storage:app`, `read:jira-user`, `report:personal-data`)
+- App manifest (`manifest.yml`) enforces least-privilege API scopes (currently `read:jira-work`, `storage:app`, `read:jira-user`, `report:personal-data`; no write scope)
 - The Product makes no external egress to third-party services. The only outbound network call leaves Atlassian's runtime is to Atlassian's own Personal Data Reporting API at `api.atlassian.com`, performed via the `privacy.reportPersonalData` helper in `@forge/api` (which handles app authentication and batching internally)
 - Forge runtime enforces execution time limits and payload size restrictions
 
@@ -342,4 +346,6 @@ This Annex describes the technical and organizational security measures implemen
 
 *This DPA is provided as a legal framework for data processing compliance. Nexus Frontier recommends that both parties consult their own legal counsel regarding their obligations under applicable Data Protection Laws.*
 
-*Document Version: 1.1 | Effective: March 7, 2026 | Last Updated: May 27, 2026*
+**Change history:** 1.3 (October 25, 2026) — aligned data inventory, security measures, data-subject assistance and retention with the shipped Product; removed `write:jira-work`, consent records and per-user rate limiting. 1.2 (May 28, 2026) — rebrand. 1.1 (May 27, 2026) — Personal Data Reporting. 1.0 (March 7, 2026) — initial.
+
+*Document Version: 1.3 | Effective: March 7, 2026 | Last Updated: October 25, 2026*

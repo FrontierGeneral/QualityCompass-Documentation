@@ -1,522 +1,234 @@
 # Security Documentation
 
 ## Quick Navigation
-- [Architecture Overview](./Architecture.md#security-architecture) - Security in system design
-- [API Reference](./API-Reference.md#authentication) - API authentication details
-- [Installation Guide](./Installation.md#permission-setup) - Setting up permissions
-- [Development Guide](./Development.md#security-best-practices) - Secure coding practices
-- [Technical Troubleshooting](./Troubleshooting-Technical.md#security-issues) - Security issue resolution
+- [Architecture Overview](./Architecture.md#authorization-model) - Where security sits in the design
+- [API Reference](./API-Reference.md) - Authorization rule for every resolver
+- [Installation Guide](./Installation.md#step-3-grant-access) - Setting up access
+- [Development Guide](./Development.md#security-practices) - Secure coding practices
+- [Technical Troubleshooting](./Troubleshooting-Technical.md#permission-and-access-issues) - Access problems
 
 ## Security Overview
 
-The Quality Scorecard for Jira implements comprehensive security measures to protect data integrity, ensure user privacy, and maintain compliance with industry standards.
+Quality Scorecard for Jira runs entirely on Atlassian Forge. Atlassian operates the hosting, network, TLS termination, storage encryption and tenant isolation; the app is responsible for authorization logic, input validation, what it stores, and how it handles personal data. This document describes exactly what the app implements. Where a control is provided by the platform rather than the app, it says so.
 
 ## Security Architecture
 
-### Defense in Depth
-
 ```
-┌─────────────────────────────────────────────────────┐
-│                   User Layer                        │
-│  ├── Authentication (Atlassian SSO)                 │
-│  ├── Session Management                             │
-│  └── RBAC (Role-Based Access Control)              │
-├─────────────────────────────────────────────────────┤
-│                Application Layer                    │
-│  ├── Input Validation & Sanitization               │
-│  ├── Output Encoding                               │
-│  ├── Rate Limiting                                 │
-│  └── Security Headers (CSP, HSTS)                  │
-├─────────────────────────────────────────────────────┤
-│                   API Layer                         │
-│  ├── API Authentication (Forge Context)            │
-│  ├── Request Validation                            │
-│  ├── Response Filtering                            │
-│  └── Audit Logging                                 │
-├─────────────────────────────────────────────────────┤
-│                 Storage Layer                       │
-│  ├── Encryption at Rest                            │
-│  ├── Access Control                                │
-│  ├── Data Isolation                                │
-│  └── Backup & Recovery                             │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│ Atlassian / Forge platform (not app code)                    │
+│  • Atlassian account authentication (SSO/MFA per site)       │
+│  • TLS in transit, encryption at rest for Forge storage      │
+│  • Per-installation tenant isolation of storage              │
+│  • Custom UI sandboxing and Forge CSP                        │
+│  • Invocation and REST API rate limits                       │
+├──────────────────────────────────────────────────────────────┤
+│ App backend – src/index.js resolvers                         │
+│  • Server-side permission checks (RBAC + Jira admin)         │
+│  • Storage-key allow-lists for generic storage resolvers     │
+│  • Input validation (inputValidator.js)                      │
+│  • Project allow-list enforced in every JQL search           │
+│  • Audit logging of denied access and permission changes     │
+├──────────────────────────────────────────────────────────────┤
+│ Scheduled job – src/personalDataReporting.js                 │
+│  • Weekly Personal Data Reporting to Atlassian               │
+│  • Automatic erasure for closed accounts                     │
+├──────────────────────────────────────────────────────────────┤
+│ App frontend – React Custom UI                               │
+│  • Tabs/actions hidden without permission (UX only)          │
+│  • CSV-injection sanitisation on export                      │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ## Authentication & Authorization
 
-### Authentication Flow
+### Authentication
+Users are authenticated by Jira Cloud. Forge passes the caller's `accountId` into every resolver (`req.context.accountId`); the app never handles credentials, sessions or tokens.
 
-```javascript
-// Forge handles authentication automatically
-// User context is provided in resolver
-resolver.define('secureFunction', async (req) => {
-  // User is already authenticated by Forge
-  const { accountId, displayName } = req.context;
-  
-  // Additional authorization checks
-  const hasPermission = await checkUserPermission(accountId, 'action');
-  if (!hasPermission) {
-    throw new Error('Unauthorized');
-  }
-  
-  // Proceed with authorized action
-});
-```
-
-### Permission Model
-
-| Role | View Analytics | Create Evaluations | Edit Evaluations | Admin Functions |
-|------|---------------|-------------------|------------------|-----------------|
-| Viewer | ✅ | ❌ | ❌ | ❌ |
-| Evaluator | ✅ | ✅ | Own only | ❌ |
-| Team Lead | ✅ | ✅ | Team's | ❌ |
-| Administrator | ✅ | ✅ | ✅ | ✅ |
-
-### API Authentication Scopes
+### Requested scopes (`manifest.yml`)
 
 ```yaml
-# manifest.yml
 permissions:
   scopes:
-    - read:jira-work      # Read Jira issues
-    - write:jira-work     # Write to Jira
-    - storage:app         # App storage access
-    - read:user:jira      # Read user information
+    - read:jira-work        # read issues/projects (search, issue, serverInfo)
+    - storage:app           # Forge Key-Value storage
+    - read:jira-user        # resolve account ids to display names
+    - report:personal-data  # Personal Data Reporting API
 ```
 
-For complete API documentation, see [API Reference](./API-Reference.md).
+The app does **not** request `write:jira-work`. It never creates, edits or transitions Jira issues.
+
+### Authorization model
+
+| Principal | How determined | Effective permissions |
+|-----------|----------------|-----------------------|
+| Jira administrator | `GET /rest/api/3/mypermissions?permissions=ADMINISTER` returns `havePermission: true`, **or** the caller is a member of the Jira group named in the `settings-admin-group` storage key (optional, no UI) | All permissions in every project |
+| Everyone else | Roles assigned to the account in `role-assignments:<PROJECT>` and the permissions of those roles in `roles:<PROJECT>` | Union of role permissions, per project |
+
+Permission catalogue: `dashboard.access`, `tab.analytics`, `tab.agentPerformance`, `tab.evaluatorAnalytics`, `tab.advancedAnalytics`, `tab.configuration`, `tab.settings`, `ticket.evaluate`, `evaluation.delete`.
+
+Roles are created and assigned by Jira administrators in **Settings → Roles & Access**. A user with no role in a project cannot open that project's dashboard (`dashboard.access`) or save evaluations (`ticket.evaluate`).
+
+### Server-side enforcement
+The UI hides tabs and buttons the user is not entitled to, but every sensitive operation is re-checked in the resolver:
+
+| Operation | Check |
+|-----------|-------|
+| Save evaluation (`setStorageValue` on `ticket-evaluations` / `project-evaluations-*`) | `ticket.evaluate` in the ticket's project; clearing the global list requires admin |
+| Delete a ticket's evaluations | `evaluation.delete` |
+| Edit criteria (`evaluation-criteria`, once seeded) | admin |
+| Project allow-list, coverage targets, role definitions, role assignments, evaluator-name overrides | admin |
+| Read role assignments / role audit log | `tab.settings` |
+| Fetch ticket metadata (`getTicketMetadataBatch`) | project in allow-list **and** Jira `BROWSE_PROJECTS` verified as the user |
+| Any other storage key through the generic resolvers | rejected (allow-lists: 9 readable, 4 writable, 1 deletable key) |
+
+Denied attempts are written to the audit log as `ACCESS_DENIED`.
+
+### Project isolation
+`searchIssues` wraps every JQL as `project in (<allowed projects>) AND (...)`. If the allow-list is empty, no Jira search is executed. Jira's own permission scheme still applies because searches run `asUser`.
 
 ## Input Validation
 
-### Validation Implementation
+Implemented in `src/validators/inputValidator.js` and applied in the resolvers:
 
-```javascript
-// src/validators/inputValidator.js
+| Input | Rule |
+|-------|------|
+| JQL | non-empty string, ≤ 5000 characters; rejects `;`, `--`, `/*`, `\\` and ASCII control characters |
+| Project key | `^[A-Z][A-Z0-9_-]{1,9}$` |
+| Issue id/key | `^([A-Z][A-Z0-9_-]{1,9}-)?[0-9]{1,10}$` |
+| Account id | `^[a-zA-Z0-9:_-]{1,255}$` |
+| Storage key | `^[a-zA-Z0-9:_-]{1,200}$` |
+| Pagination | `startAt` 0–100 000, `maxResults` 1–100 |
+| Free text (`sanitizeString`) | control characters removed, trimmed, truncated to 10 000 characters |
 
-// JQL Injection Prevention
-const validateJQL = (jql) => {
-  const DANGEROUS_PATTERNS = [
-    /--/,              // SQL comment
-    /;/,               // Statement separator
-    /union\s+select/i, // Union attack
-    /<script>/i,       // XSS attempt
-    /javascript:/i     // JavaScript protocol
-  ];
-  
-  for (const pattern of DANGEROUS_PATTERNS) {
-    if (pattern.test(jql)) {
-      throw new Error('Invalid JQL query');
-    }
-  }
-  
-  // Length validation
-  if (jql.length > 2000) {
-    throw new Error('JQL query too long');
-  }
-  
-  return jql;
-};
+Scores are constrained by the UI slider (integers 0–10). Feedback is stored verbatim and rendered as text by React (no HTML injection); it is not length-limited by the backend.
 
-// Prevent CSV Injection
-const sanitizeCSVValue = (value) => {
-  // Prefix dangerous characters
-  if (/^[=+\-@]/.test(value)) {
-    return `'${value}`;
-  }
-  return value;
-};
-```
-
-### Input Validation Rules
-
-| Input Type | Validation Rules | Max Length |
-|------------|-----------------|------------|
-| JQL Query | No injection patterns, alphanumeric + operators | 2000 |
-| Project Key | Uppercase letters and numbers only | 10 |
-| Account ID | Alphanumeric with colons and hyphens | 100 |
-| Feedback Text | HTML entities encoded | 5000 |
-| Score | Integer 0-10 | - |
-| Storage Key | Alphanumeric with hyphens and colons | 200 |
+### CSV export hardening
+`exportService.ts` (`sanitizeCSVValue`) prefixes CSV cell values that start with `=`, `+`, `-` or `@` with an apostrophe and quotes values containing commas or quotes, so spreadsheets do not interpret them as formulas. The Excel exports do not call this function; ExcelJS writes the values as typed string cells, which spreadsheet applications treat as text rather than formulas.
 
 ## Data Protection
 
+### What the app stores
+| Category | Keys | Personal data? |
+|----------|------|----------------|
+| Evaluations | `ticket-evaluations`, `project-evaluations-<KEY>` | evaluator `accountId`, display name, free-text feedback |
+| Criteria & targets | `evaluation-criteria`, `coverage-targets` | no |
+| Access configuration | `allowed-projects`, `allowed-projects-audit`, `roles:*`, `role-assignments:*`, `role-audit:*` | account ids and display names of admins/assignees |
+| Preferences | `theme-preference`, `selected-project` | no |
+| Name caches | `user-displayname-cache`, `evaluator-name-mapping`, `evaluator-name-removed`, `user-cache*`, `evaluator-name:*`, `assignable-users-cache:*` | account id → display name |
+| Audit | `audit-log:*`, `audit-index:*`, `security-alert:*` | actor account ids |
+| Personal-data index | `personal-data-account:<id>` | account id + last refresh time |
+
+The app does **not** store e-mail addresses, passwords, API tokens, IP addresses or issue content beyond what Jira returns at read time for display.
+
 ### Encryption
+- **At rest**: Forge storage is encrypted by Atlassian (platform control).
+- **In transit**: all calls are HTTPS; the Custom UI talks to the backend only through the Forge bridge.
+- No data leaves Atlassian infrastructure: the manifest declares no `external` egress permissions.
 
-#### At Rest
-- All data stored in Forge Storage is encrypted
-- AES-256 encryption standard
-- Managed by Atlassian infrastructure
-
-#### In Transit
-- All communications use HTTPS/TLS 1.3
-- Certificate pinning for API calls
-- No sensitive data in URLs
-
-### Data Classification
-
-| Data Type | Classification | Protection Level |
-|-----------|---------------|------------------|
-| Evaluation Scores | Internal | Standard |
-| User Feedback | Internal | Standard |
-| Account IDs | Confidential | High |
-| Email Addresses | Confidential | High |
-| API Keys | Secret | Maximum |
-| Audit Logs | Internal | Standard |
-
-### Data Retention
-
-```javascript
-// Data retention policies
-const RETENTION_POLICIES = {
-  evaluations: 'unlimited',      // Keep all evaluations
-  audit_logs: 90,                // 90 days
-  deleted_items: 30,             // 30 days soft delete
-  exports: 7,                    // 7 days for temporary exports
-  cache: 0.5                     // 12 hours for cached data
-};
-```
-
-## Security Headers
-
-### Content Security Policy (CSP)
-
-```yaml
-# manifest.yml
-permissions:
-  content:
-    styles:
-      - 'self'
-    scripts:
-      - 'self'
-```
-
-### Response Headers
-
-```javascript
-// Security headers applied by Forge
-{
-  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-  'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'DENY',
-  'X-XSS-Protection': '1; mode=block',
-  'Referrer-Policy': 'strict-origin-when-cross-origin'
-}
-```
-
-## Rate Limiting
-
-### Implementation
-
-```javascript
-// src/middleware/rateLimiter.js
-class RateLimiter {
-  constructor(options = {}) {
-    this.requests = new Map();
-    this.limits = {
-      perMinute: options.perMinute || 60,
-      perHour: options.perHour || 1000,
-      concurrent: options.concurrent || 10
-    };
-  }
-  
-  async checkLimit(userId) {
-    const now = Date.now();
-    const userRequests = this.requests.get(userId) || [];
-    
-    // Clean old requests
-    const recentRequests = userRequests.filter(
-      time => now - time < 60000
-    );
-    
-    if (recentRequests.length >= this.limits.perMinute) {
-      throw new Error('Rate limit exceeded');
-    }
-    
-    recentRequests.push(now);
-    this.requests.set(userId, recentRequests);
-  }
-}
-```
-
-### Client & Platform Controls
-
-- Client-side concurrency limiter (default 8 inflight) reduces contention and rate-limit hits.
-- In-flight request deduplication coalesces identical calls.
-- Platform (Forge/Jira) rate limits still apply; exponential backoff is used on `429`.
-
-For API performance details, see [API Reference](./API-Reference.md#performance-and-response-times).
+### Browser-side data
+The frontend keeps analytics results and ticket metadata in an IndexedDB database (`qc-persisted-cache`) and an in-memory cache for performance. This data is scoped to the user's browser profile and the Jira site origin; it contains the same evaluation/ticket data the user is already authorised to see.
 
 ## Audit Logging
 
-### Audit Service (Not Currently Integrated)
+`src/services/auditService.js` is wired into the resolvers. Events currently emitted:
 
-**Note:** While an audit service (`auditService.js`) exists in the codebase, it is not currently integrated into the main application. The following events would be logged if the service were active:
+| Event | When |
+|-------|------|
+| `ACCESS_DENIED` | generic storage read/write/delete outside the allow-list; evaluation write without `ticket.evaluate`; evaluation delete without `evaluation.delete`; reading assignments/audit log without `tab.settings` |
+| `PERMISSION_CHANGED` | role created/updated/deleted, roles assigned (single/bulk), user access removed, evaluations deleted |
+| `USER_DATA_DELETED` | Personal Data Reporting erased a closed account |
 
-```javascript
-// Potential audit events (not currently active)
-const AUDIT_EVENTS = {
-  // Authentication
-  LOGIN_SUCCESS: 'User logged in',
-  LOGIN_FAILURE: 'Failed login attempt',
-  
-  // Data Operations
-  EVALUATION_CREATED: 'Evaluation created',
-  EVALUATION_MODIFIED: 'Evaluation modified',
-  
-  // Administrative
-  SETTINGS_CHANGED: 'Settings modified',
-  DATA_EXPORTED: 'Data exported',
-  
-  // Security
-  RATE_LIMIT_EXCEEDED: 'Rate limit exceeded',
-  VALIDATION_FAILURE: 'Input validation failed'
-};
-```
-
-**Current Tracking:** The app currently tracks:
-- Project access changes (stored in `allowed-projects-audit`)
-- Evaluation history (all evaluations are preserved)
-
-### Audit Log Format
+Entry format (stored at `audit-log:<timestamp>:<id>`, indexed per day in `audit-index:<yyyy-mm-dd>`):
 
 ```json
 {
-  "timestamp": "2025-01-07T10:30:00Z",
-  "eventType": "EVALUATION_CREATED",
-  "userId": "user-123",
-  "userEmail": "user@example.com",
-  "ipAddress": "192.168.1.1",
-  "resource": "evaluation-456",
-  "details": {
-    "ticketId": "PROJ-789",
-    "score": 8.5
-  },
-  "result": "SUCCESS"
+  "id": "…",
+  "timestamp": "2026-10-25T10:30:00.000Z",
+  "event": "ACCESS_DENIED",
+  "severity": "WARNING",
+  "accountId": "…",
+  "projectKey": "PROJ",
+  "ipAddress": null,
+  "userAgent": null,
+  "details": { "action": "storage_write_denied", "key": "roles:PROJ", "requestId": null }
 }
 ```
+`ipAddress` and `userAgent` are always `null`: Forge does not expose them to resolvers.
+
+In addition:
+- Project allow-list changes are kept in `allowed-projects-audit` and shown in **Settings → Project Access & Recent Changes**.
+- Role/permission changes are kept in `role-audit:<PROJECT>` and shown in **Settings → Roles & Access** (requires `tab.settings`).
+
+Retention: the service defines a 90-day retention for `audit-log:*` entries, but the clean-up routine is currently a no-op; audit entries persist until the app is uninstalled. The `audit-log:*` records are not exposed in the UI; they can be inspected by the vendor via Forge tooling on request.
+
+## Personal Data Reporting (GDPR)
+
+Atlassian requires apps that cache personal data to report the account ids they hold so Atlassian can signal closed or updated accounts. The app implements this with the `report:personal-data` scope and a weekly `scheduledTrigger`:
+
+1. `personalDataIndex.js` records every account id the app stores (evaluators, assignees, role assignees, name-mapping entries) in `personal-data-account:<id>` with an `updatedAt` timestamp, and periodically re-discovers ids from existing storage.
+2. `personalDataReporting.js` calls `privacy.reportPersonalData()` with the full list.
+3. Accounts reported as **closed** are passed to `gdprService.deleteUserData(accountId)`, which removes the account's evaluations from `ticket-evaluations`, deletes its entry in `evaluator-name-mapping`, removes `gdpr-consent:<id>` and the index record, and writes a `USER_DATA_DELETED` audit event.
+4. Accounts reported as **updated** have their display name re-fetched from Jira and refreshed in `evaluator-name-mapping`.
+
+Known limitation (tracked for a future release): `deleteUserData` does not yet purge the account from `project-evaluations-<KEY>` lists, role assignments, audit entries or display-name caches. Customers who need a complete erasure for a specific account should contact support (see [Privacy Policy](../Legal/Privacy-Policy.md)).
+
+### Data subject requests
+There is no self-service export/erasure UI. The vendor fulfils access, rectification and erasure requests on request from the customer's Jira administrator, using Forge tooling against the customer's installation. Customers can also export evaluation data at any time from the dashboards (CSV/Excel), and uninstalling the app removes all app storage for the site.
+
+### Data retention
+The app does **not** automatically expire evaluations, configuration or caches. `gdprService.js` contains retention constants (`RETENTION_PERIODS`) and an `enforceDataRetention()` helper, but no scheduled job calls it. Data is retained until:
+- an administrator deletes a ticket's evaluations (`evaluation.delete`),
+- Personal Data Reporting erases a closed account, or
+- the app is uninstalled from the site.
 
 ## Vulnerability Management
 
-### Security Scanning
+- `npm run security-check` → `npm audit --audit-level=high`.
+- An SBOM (`sbom.json`) is generated for each release.
+- `forge lint` is run before deployment.
+- Security-relevant dependencies (ExcelJS, Vite/esbuild, Radix) are kept current; the app has no server-side third-party services.
 
-```bash
-# Regular security scans
-npm audit                    # Check npm dependencies
-npm audit fix               # Auto-fix vulnerabilities
-forge lint                  # Forge security linting
-```
-
-### Dependency Management
-
-```json
-// package.json
-{
-  "scripts": {
-    "security-check": "npm audit --audit-level=moderate",
-    "update-deps": "npm update && npm audit fix"
-  }
-}
-```
-
-### Known Vulnerabilities Addressed
-
-| Vulnerability | Status | Mitigation |
-|--------------|--------|------------|
-| JQL Injection | ✅ Fixed | Input validation |
-| XSS | ✅ Fixed | Output encoding, CSP |
-| CSV Injection | ✅ Fixed | Value prefixing |
-| ReDoS | ✅ Fixed | Regex optimization |
-| Prototype Pollution | ✅ Fixed | Object.create(null) |
-| Sensitive Data Logging | ✅ Fixed | Removed console.logs |
-
-## GDPR Compliance
-
-### Data Subject Rights
-
-```javascript
-// src/services/gdprService.js
-
-// Right to Access
-async function exportUserData(userId) {
-  const evaluations = await getEvaluationsByUser(userId);
-  const auditLogs = await getAuditLogsByUser(userId);
-  return {
-    evaluations,
-    auditLogs,
-    exportDate: new Date().toISOString()
-  };
-}
-
-// Right to Erasure
-async function deleteUserData(userId) {
-  await deleteEvaluations(userId);
-  await deleteAuditLogs(userId);
-  await deleteUserPreferences(userId);
-  return { deleted: true, timestamp: new Date() };
-}
-
-// Right to Rectification
-async function updateUserData(userId, updates) {
-  await updateUserRecords(userId, updates);
-  await logDataUpdate(userId, updates);
-  return { updated: true };
-}
-```
-
-### Privacy by Design
-
-- Minimal data collection
-- Purpose limitation
-- Data minimization
-- Accuracy maintenance
-- Storage limitation
-- Security by default
+### Hardening history (production 7.x, 2026)
+| Change | Effect |
+|--------|--------|
+| Removed generic `makeApiRequest` resolver and debug resolvers | Frontend can no longer call arbitrary Jira endpoints |
+| Added storage-key allow-lists to generic storage resolvers | Roles, assignments, audit logs, consent and index records are unreachable from the client |
+| `ticket.evaluate` required for evaluation writes; admin required for criteria edits | Prevents unauthenticated writes from a tampered client |
+| BROWSE_PROJECTS check before `asApp` ticket metadata fetch | Prevents cross-project data exposure |
+| Dropped `write:jira-work` scope | Least privilege |
+| Audit logging on denied access | Detectability |
 
 ## Incident Response
 
-### Security Incident Procedure
+Security incidents are handled under the vendor's internal Incident Response Plan (severity classification, containment, customer notification within 72 hours for personal-data breaches as required by GDPR, post-incident review). Report suspected vulnerabilities or incidents to **support@nexusfrontier.net** with "SECURITY" in the subject line. See also the [Cloud Security Statement](../Legal/Cloud-Security-Statement.md) and [Support SLA](../Legal/Support-SLA.md).
 
-1. **Detection**
-   - Automated alerts
-   - User reports
-   - Log monitoring
+## Release Security Checklist (vendor)
 
-2. **Assessment**
-   - Severity classification
-   - Impact analysis
-   - Root cause identification
+- [ ] `npm audit --audit-level=high` clean or exceptions documented
+- [ ] `forge lint` clean
+- [ ] Scopes in `manifest.yml` unchanged, or change reviewed and documented
+- [ ] No new generic storage keys added to allow-lists without an authorization rule
+- [ ] All new resolvers validate inputs and check permissions server-side
+- [ ] SBOM regenerated
+- [ ] Documentation (this file, API Reference, Privacy Policy data inventory) updated
 
-3. **Containment**
-   - Isolate affected systems
-   - Prevent spread
-   - Preserve evidence
+## Compliance Posture
 
-4. **Eradication**
-   - Remove threat
-   - Patch vulnerabilities
-   - Update security measures
-
-5. **Recovery**
-   - Restore services
-   - Verify integrity
-   - Monitor for recurrence
-
-6. **Lessons Learned**
-   - Document incident
-   - Update procedures
-   - Train team
-
-### Contact Information
-
-| Role | Contact | Escalation Time |
-|------|---------|-----------------|
-| Nexus Frontier Support | support@nexusfrontier.net | Immediate |
-
-## Security Best Practices
-
-### For Developers
-
-```javascript
-// ✅ DO: Validate all inputs
-const safeInput = validateAndSanitize(userInput);
-
-// ❌ DON'T: Trust user input
-const query = `SELECT * FROM table WHERE id = ${userInput}`;
-
-// ✅ DO: Use parameterized queries
-const result = await api.search({ jql: sanitizedJQL });
-
-// ❌ DON'T: Concatenate user input
-const jql = "project = " + userProject;
-
-// ✅ DO: Handle errors securely
-catch (error) {
-  logger.error('Operation failed', { context });
-  return { error: 'An error occurred' };
-}
-
-// ❌ DON'T: Expose internal details
-catch (error) {
-  return { error: error.stack };
-}
-```
-
-### For Administrators
-
-1. **Regular Updates**
-   - Apply security patches promptly
-   - Update dependencies monthly
-   - Review security advisories
-
-2. **Access Control**
-   - Regular permission audits
-   - Remove unused accounts
-   - Enforce least privilege
-
-3. **Monitoring**
-   - Review audit logs daily
-   - Set up security alerts
-   - Monitor unusual patterns
-
-4. **Training**
-   - Security awareness sessions
-   - Phishing simulations
-   - Incident response drills
-
-## Security Checklist
-
-### Deployment Security Checklist
-
-- [ ] All dependencies updated
-- [ ] Security scan passed
-- [ ] CSP headers configured
-- [ ] Rate limiting enabled
-- [ ] Audit logging active
-- [ ] Input validation tested
-- [ ] Error messages sanitized
-- [ ] Permissions verified
-- [ ] Backup configured
-- [ ] Monitoring enabled
-
-### Quarterly Security Review
-
-- [ ] Dependency audit
-- [ ] Permission review
-- [ ] Log analysis
-- [ ] Penetration testing
-- [ ] Security training
-- [ ] Policy updates
-- [ ] Incident review
-- [ ] Compliance check
-
-## Compliance
-
-### Standards Compliance
-
-- **GDPR**: Full compliance with data protection
-- **SOC 2**: Type II compliance through Atlassian
-- **ISO 27001**: Security management standards
-- **OWASP Top 10**: Protection against common vulnerabilities
-
-### Audit Reports
-
-Reports available upon request:
-- Security assessment reports
-- Penetration testing results
-- Compliance certificates
-- Vulnerability scan reports
+- **GDPR**: the vendor acts as processor; see the [Data Processing Agreement](../Legal/Data-Processing-Agreement.md). Technical measures are those described above.
+- **Hosting certifications**: provided by Atlassian for the Forge platform (SOC 2, ISO 27001 and others, per Atlassian's Trust Center). The app itself has not undergone an independent certification or third-party penetration test.
+- **Marketplace**: the app is distributed through the Atlassian Marketplace and subject to Atlassian's app security requirements and review.
 
 ## Related Resources
 
-- [Architecture Documentation](./Architecture.md) - System architecture
-- [API Reference](./API-Reference.md) - Complete API documentation
-- [Installation Guide](./Installation.md) - Deployment and configuration
-- [Development Guide](./Development.md) - Development practices
-- [Technical Troubleshooting](./Troubleshooting-Technical.md) - Issue resolution
+- [Architecture Documentation](./Architecture.md)
+- [API Reference](./API-Reference.md)
+- [Installation Guide](./Installation.md)
+- [Development Guide](./Development.md)
+- [Technical Troubleshooting](./Troubleshooting-Technical.md)
+- [Privacy Policy](../Legal/Privacy-Policy.md) · [Cloud Security Statement](../Legal/Cloud-Security-Statement.md)
 
 ---
 
 *For security concerns or vulnerability reports, contact: support@nexusfrontier.net*
 
-*Last Updated: January 2025*
-
+*Last Updated: October 2026 — reflects app version 1.3.0 (production deployment 7.x)*
